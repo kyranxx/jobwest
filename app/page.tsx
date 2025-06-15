@@ -21,11 +21,19 @@ export default function JobPortal() {
 
   // Country data with flags
   const countries = [
-    { code: "de", name: "Nemecko", flag: "/flags/germany.png" },
-    { code: "at", name: "Rakúsko", flag: "/flags/austria.png" },
-    { code: "nl", name: "Holandsko", flag: "/flags/netherlands.png" },
-    { code: "uk", name: "Spojené kráľovstvo", flag: "/flags/uk.png" },
-    { code: "us", name: "USA", flag: "/flags/usa.png" },
+    { code: "de", name: "Nemecko" },
+    { code: "fr", name: "Francúzsko" },
+    { code: "es", name: "Španielsko" },
+    { code: "gb", name: "Spojené kráľovstvo" },
+    { code: "ie", name: "Írsko" },
+    { code: "dk", name: "Dánsko" },
+    { code: "se", name: "Švédsko" },
+    { code: "it", name: "Taliansko" },
+    { code: "no", name: "Nórsko" },
+    { code: "fi", name: "Fínsko" },
+    { code: "at", name: "Rakúsko" },
+    { code: "ch", name: "Švajčiarsko" },
+    { code: "us", name: "USA" },
   ]
 
   // Job types
@@ -149,9 +157,7 @@ export default function JobPortal() {
                     {countries.map((country) => (
                       <SelectItem key={country.code} value={country.code}>
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-3 bg-gray-200 rounded-sm overflow-hidden flex items-center justify-center text-[8px]">
-                            {country.code.toUpperCase()}
-                          </div>
+                          <div className={`flag flag-${country.code}`} />
                           <span>{country.name}</span>
                         </div>
                       </SelectItem>
@@ -192,15 +198,6 @@ export default function JobPortal() {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-medium mb-2">Fakturácia</h3>
-                <Input type="number" placeholder="Počet dní" className="h-9" />
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-2">Splatnosť</h3>
-                <Input type="number" placeholder="Počet dní" className="h-9" />
-              </div>
             </div>
           </aside>
 
@@ -256,9 +253,7 @@ export default function JobPortal() {
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
                             {job.jobType}
                           </Badge>
-                          <div className="w-5 h-3 bg-gray-200 rounded-sm overflow-hidden flex items-center justify-center text-[8px]">
-                            {job.country.code.toUpperCase()}
-                          </div>
+                          <div className={`flag flag-${job.country.code}`} />
                         </div>
                         <p className="text-xs font-medium mt-2">{job.salary}</p>
                       </div>
@@ -290,9 +285,7 @@ export default function JobPortal() {
                               TOP
                             </Badge>
                           )}
-                          <div className="w-6 h-4 bg-gray-200 rounded-sm overflow-hidden flex items-center justify-center text-[8px] font-bold">
-                            {job.country.code.toUpperCase()}
-                          </div>
+                          <div className={`flag flag-${job.country.code}`} />
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
