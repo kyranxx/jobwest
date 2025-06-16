@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import JobDetail from "@/components/ui/job-detail"
 
 export default function JobPortal() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
@@ -68,9 +69,13 @@ export default function JobPortal() {
 
   const handleJobClick = (id: number) => {
     setSelectedJob(id)
-    // In a real app, this would navigate to the job detail page or open a modal
-    console.log(`Job ${id} clicked`)
   }
+
+  const handleBackToList = () => {
+    setSelectedJob(null)
+  }
+
+  const selectedJobDetails = selectedJob ? jobs.find((job) => job.id === selectedJob) : null
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -110,7 +115,7 @@ export default function JobPortal() {
         {/* Main content with sidebar */}
         <div className="flex flex-grow">
           {/* Left sidebar with filters */}
-          <aside className="w-64 bg-white border-r p-4 hidden md:block">
+          <aside className="w-64 bg-white border-r p-4 hidden md:block flex-shrink-0">
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-medium">Vyhľadávanie</h3>
@@ -216,136 +221,142 @@ export default function JobPortal() {
 
           {/* Main content area */}
           <main className="flex-grow p-6">
-            {/* Job listings */}
-            {viewMode === "grid" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
-                    onClick={() => handleJobClick(job.id)}
-                  >
-                    <div className="p-3 pb-1 relative">
-                      {job.isTop && (
-                        <Badge className="absolute top-2 left-2 bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm pointer-events-none">
-                          TOP
-                        </Badge>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full"
-                          onClick={(e) => toggleSaveJob(job.id, e)}
-                          title="Uložiť ponuku"
-                        >
-                          {savedJobs.includes(job.id) ? (
-                            <Bookmark className="h-5 w-5 text-[#0000FF]" fill="#0000FF" />
-                          ) : (
-                            <BookmarkPlus className="h-5 w-5" />
-                          )}
-                          <span className="sr-only">Uložiť ponuku</span>
-                        </Button>
-                      </div>
-                      <div className="mt-8">
-                        <h3 className="font-medium text-sm">{job.title}</h3>
-                        <div className="flex items-center mt-2 gap-2">
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
-                            {job.jobType}
-                          </Badge>
-                          <div className={`flag flag-${job.country.code}`} />
-                        </div>
-                        <p className="text-xs font-medium mt-2">{job.salary}</p>
-                      </div>
-                    </div>
-                    <div className="h-[1px] bg-gray-100 mx-3 my-2"></div>
-                    <div className="px-3 pb-3 flex justify-between items-center">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
-                        {job.category}
-                      </Badge>
-                      <span className="text-[10px] text-gray-400">12.06.2025</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {selectedJobDetails ? (
+              <JobDetail job={selectedJobDetails} onBack={handleBackToList} />
             ) : (
-              <div className="flex flex-col gap-5">
-                {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
-                    onClick={() => handleJobClick(job.id)}
-                  >
-                    <div className="p-4 flex justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium">{job.title}</h3>
+              <>
+                {/* Job listings */}
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {jobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
+                        onClick={() => handleJobClick(job.id)}
+                      >
+                        <div className="p-3 pb-1 relative">
                           {job.isTop && (
-                            <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 pointer-events-none">
+                            <Badge className="absolute top-2 left-2 bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm pointer-events-none">
                               TOP
                             </Badge>
                           )}
-                          <div className={`flag flag-${job.country.code}`} />
+                          <div className="absolute top-2 right-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full"
+                              onClick={(e) => toggleSaveJob(job.id, e)}
+                              title="Uložiť ponuku"
+                            >
+                              {savedJobs.includes(job.id) ? (
+                                <Bookmark className="h-5 w-5 text-[#0000FF]" fill="#0000FF" />
+                              ) : (
+                                <BookmarkPlus className="h-5 w-5" />
+                              )}
+                              <span className="sr-only">Uložiť ponuku</span>
+                            </Button>
+                          </div>
+                          <div className="mt-8">
+                            <h3 className="font-medium text-sm">{job.title}</h3>
+                            <div className="flex items-center mt-2 gap-2">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
+                                {job.jobType}
+                              </Badge>
+                              <div className={`flag flag-${job.country.code}`} />
+                            </div>
+                            <p className="text-xs font-medium mt-2">{job.salary}</p>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
-                            {job.jobType}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
+                        <div className="h-[1px] bg-gray-100 mx-3 my-2"></div>
+                        <div className="px-3 pb-3 flex justify-between items-center">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
                             {job.category}
                           </Badge>
+                          <span className="text-[10px] text-gray-400">12.06.2025</span>
                         </div>
-                        <p className="text-sm font-medium mt-2">{job.salary}</p>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 rounded-full"
-                          onClick={(e) => toggleSaveJob(job.id, e)}
-                          title="Uložiť ponuku"
-                        >
-                          {savedJobs.includes(job.id) ? (
-                            <Bookmark className="h-6 w-6 text-[#0000FF]" fill="#0000FF" />
-                          ) : (
-                            <BookmarkPlus className="h-6 w-6" />
-                          )}
-                          <span className="sr-only">Uložiť ponuku</span>
-                        </Button>
-                        <span className="text-xs text-gray-400">12.06.2025</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {jobs.map((job) => (
+                      <div
+                        key={job.id}
+                        className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
+                        onClick={() => handleJobClick(job.id)}
+                      >
+                        <div className="p-4 flex justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium">{job.title}</h3>
+                              {job.isTop && (
+                                <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 pointer-events-none">
+                                  TOP
+                                </Badge>
+                              )}
+                              <div className={`flag flag-${job.country.code}`} />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
+                                {job.jobType}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
+                                {job.category}
+                              </Badge>
+                            </div>
+                            <p className="text-sm font-medium mt-2">{job.salary}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 rounded-full"
+                              onClick={(e) => toggleSaveJob(job.id, e)}
+                              title="Uložiť ponuku"
+                            >
+                              {savedJobs.includes(job.id) ? (
+                                <Bookmark className="h-6 w-6 text-[#0000FF]" fill="#0000FF" />
+                              ) : (
+                                <BookmarkPlus className="h-6 w-6" />
+                              )}
+                              <span className="sr-only">Uložiť ponuku</span>
+                            </Button>
+                            <span className="text-xs text-gray-400">12.06.2025</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            {/* Pagination */}
-            <div className="flex justify-center mt-8">
-              <nav className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
-                  <span className="sr-only">Predchádzajúca strana</span>
-                  <span>{"<"}</span>
-                </Button>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-md bg-gray-100">
-                  1
-                </Button>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                  2
-                </Button>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                  3
-                </Button>
-                <span className="px-2">...</span>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                  8
-                </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
-                  <span className="sr-only">Nasledujúca strana</span>
-                  <span>{">"}</span>
-                </Button>
-              </nav>
-            </div>
+                {/* Pagination */}
+                <div className="flex justify-center mt-8">
+                  <nav className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
+                      <span className="sr-only">Predchádzajúca strana</span>
+                      <span>{"<"}</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md bg-gray-100">
+                      1
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
+                      2
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
+                      3
+                    </Button>
+                    <span className="px-2">...</span>
+                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
+                      8
+                    </Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
+                      <span className="sr-only">Nasledujúca strana</span>
+                      <span>{">"}</span>
+                    </Button>
+                  </nav>
+                </div>
+              </>
+            )}
           </main>
         </div>
       </div>
