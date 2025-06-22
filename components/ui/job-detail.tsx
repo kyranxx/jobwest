@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react"
 type Job = {
   id: number
   title: string
-  country: {
+  country?: {
     code: string
     name: string
   }
@@ -17,6 +17,8 @@ type Job = {
   jobType: string
   salary: string
   isTop: boolean
+  accommodation_provided: boolean
+  accommodation_paid: boolean
   // Add a description field for the detail view
   description?: string
 }
@@ -48,22 +50,30 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
         <Badge variant="outline" className="text-sm px-3 py-1 rounded-md bg-gray-50">
           {job.category}
         </Badge>
-        <div className="flex items-center gap-2">
-          <div className={`flag flag-${job.country.code}`} />
-          <span>{job.country.name}</span>
-        </div>
+        {job.country && (
+          <div className="flex items-center gap-2">
+            <div className={`flag flag-${job.country.code}`} />
+            <span>{job.country.name}</span>
+          </div>
+        )}
       </div>
       <p className="text-lg font-semibold mt-2 mb-4">{job.salary}</p>
       <div className="prose max-w-none">
-        <p>
-          {job.description ||
-            "Tu bude podrobný popis pracovnej ponuky. Zatiaľ je tu len placeholder text, pretože v pôvodných dátach nebol žiadny popis. V reálnej aplikácii by sa tu načítal celý text inzerátu."}
-        </p>
-        <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore
-          magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-          consequat.
-        </p>
+        <p>{job.description}</p>
+      </div>
+      <div className="mt-4 space-y-2">
+        {job.accommodation_provided && (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Ubytovanie vybavené:</span>
+            <span>Áno</span>
+          </div>
+        )}
+        {job.accommodation_paid && (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Ubytovanie hradené:</span>
+            <span>Áno</span>
+          </div>
+        )}
       </div>
       <Button size="lg" className="mt-6 w-full sm:w-auto">
         Požiadať o túto prácu

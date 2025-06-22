@@ -1,31 +1,53 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { BookmarkPlus, Bookmark, LayoutGrid, ListFilter, Plus, Search, User } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { BookmarkPlus, Bookmark, LayoutGrid, ListFilter, Plus, Search, User, X, RotateCcw } from "lucide-react"
 import Image from "next/image"
-
+import Link from "next/link"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { UserButton } from "@/components/auth/user-button"
+import { AddAdButton } from "@/components/auth/add-ad-button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MultiSelect } from "@/components/ui/multi-select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import JobDetail from "@/components/ui/job-detail"
+import { supabase } from "@/lib/supabase"
+import { Job } from "@/lib/types"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { generateNonce, hashNonce } from "@/lib/utils/nonce"
 
-export default function JobPortal() {
+function JobSearchPortal() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list")
   const [savedJobs, setSavedJobs] = useState<number[]>([])
   const [selectedJob, setSelectedJob] = useState<number | null>(null)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
+  const [isAccommodationProvided, setIsAccommodationProvided] = useState(false)
+  const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(16)
 
-  // Country data with flags
-  const countries = [
+  useEffect(() => {
+    if (viewMode === 'grid') {
+      setItemsPerPage(16);
+    } else {
+      setItemsPerPage(15);
+    }
+  }, [viewMode]);
+
+  const countries = useMemo(() => [
     { code: "de", name: "Nemecko" },
     { code: "fr", name: "Francúzsko" },
     { code: "es", name: "Španielsko" },
-    { code: "gb", name: "Spojené kráľovstvo" },
+    { code: "gb", name: "V. Británia" },
     { code: "ie", name: "Írsko" },
     { code: "dk", name: "Dánsko" },
     { code: "se", name: "Švédsko" },
@@ -35,9 +57,8 @@ export default function JobPortal() {
     { code: "at", name: "Rakúsko" },
     { code: "ch", name: "Švajčiarsko" },
     { code: "us", name: "USA" },
-  ]
+  ], [])
 
-  // Job types
   const jobTypes = [
     { id: "zivnost", label: "Živnosť" },
     { id: "zmluva", label: "Na zmluvu" },
@@ -45,16 +66,61 @@ export default function JobPortal() {
     { id: "ine", label: "Iné" },
   ]
 
-  // Mock data for job listings
-  const jobs = Array.from({ length: 25 }, (_, i) => ({
-    id: i + 1,
-    title: ["Frontend Developer", "UX Dizajnér", "Produktový Manažér", "Dátový Vedec", "DevOps Inžinier"][i % 5],
-    country: countries[i % 5],
-    category: ["IT", "Dizajn", "Marketing", "Financie", "Strojárstvo"][i % 5],
-    jobType: ["Živnosť", "Na zmluvu", "Brigáda", "Iné", "Živnosť"][i % 5],
-    salary: ["3000€ - 4500€", "2500€ - 3200€", "2800€ - 3500€", "3200€ - 4000€", "2700€ - 3300€"][i % 5],
-    isTop: i < 12,
-  }))
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const { data, error } = await supabase.from('jobs').select('*')
+      if (error) {
+        console.error('Error fetching jobs:', error)
+      } else {
+        let formattedJobs = data.map((job: any, index: number) => {
+          const country = countries.find(c => c.code === job.country_code);
+          return {
+            ...job,
+            country: country ? { code: country.code, name: country.name } : undefined,
+            jobType: job.job_type,
+            isTop: index < 15,
+            created_at: new Date(new Date().getTime() - index * 1000 * 60 * 60 * 24).toISOString(),
+          };
+        });
+        setJobs(formattedJobs)
+      }
+    }
+
+    fetchJobs()
+  }, [countries])
+
+  useEffect(() => {
+    let tempJobs = jobs
+    if (searchTerm) {
+      tempJobs = tempJobs.filter(job => job.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    }
+    if (selectedCategories.length > 0) {
+      tempJobs = tempJobs.filter(job => selectedCategories.includes(job.category.toLowerCase()))
+    }
+    if (selectedCountries.length > 0) {
+      tempJobs = tempJobs.filter(job => job.country?.code && selectedCountries.includes(job.country.code))
+    }
+    if (selectedJobTypes.length > 0) {
+      tempJobs = tempJobs.filter(job => {
+        const jobType = job.jobType || "";
+        const jobTypeObject = jobTypes.find(jt => jt.label === jobType);
+        return jobTypeObject && selectedJobTypes.includes(jobTypeObject.id);
+      })
+    }
+    if (isAccommodationProvided) {
+      tempJobs = tempJobs.filter(job => job.accommodation_provided);
+    }
+    if (isAccommodationPaid) {
+      tempJobs = tempJobs.filter(job => job.accommodation_paid);
+    }
+    tempJobs.sort((a, b) => {
+      if (a.isTop && !b.isTop) return -1;
+      if (!a.isTop && b.isTop) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    setFilteredJobs(tempJobs)
+    setCurrentPage(1)
+  }, [jobs, searchTerm, selectedCategories, selectedCountries, selectedJobTypes, isAccommodationProvided, isAccommodationPaid])
 
   const toggleSaveJob = (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -75,50 +141,39 @@ export default function JobPortal() {
     setSelectedJob(null)
   }
 
+  const resetFilters = () => {
+    setSearchTerm("")
+    setSelectedCategories([])
+    setSelectedCountries([])
+    setSelectedJobTypes([])
+    setIsAccommodationProvided(false)
+    setIsAccommodationPaid(false)
+  }
+
   const selectedJobDetails = selectedJob ? jobs.find((job) => job.id === selectedJob) : null
+  const totalPages = Math.ceil(filteredJobs.length / itemsPerPage)
+  const paginatedJobs = filteredJobs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const getOfferText = (count: number) => {
+    if (count === 1) return "ponuka";
+    if (count >= 2 && count <= 4) return "ponuky";
+    return "ponúk";
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Container with max width and centered */}
-      <div className="max-w-screen-2xl mx-auto w-full">
-        {/* Top banner */}
-        <header className="h-16 border-b bg-white px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center">
-            <div>
-              <Image src="/logo.png" alt="JobWest Logo" width={120} height={40} className="h-10 w-auto" />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="default"
-              size="icon"
-              className="rounded-md h-10 w-10 bg-black hover:bg-gray-800"
-              title="Pridať inzerát"
-              onClick={() => toast.info("Táto funkcia ešte nebola implementovaná.")}
-            >
-              <Plus className="h-5 w-5" />
-              <span className="sr-only">Pridať inzerát</span>
-            </Button>
-            <Button
-              variant="default"
-              size="icon"
-              className="rounded-md h-10 w-10 bg-black hover:bg-gray-800"
-              title="Prihlásiť"
-              onClick={() => toast.info("Táto funkcia ešte nebola implementovaná.")}
-            >
-              <User className="h-5 w-5" />
-              <span className="sr-only">Prihlásiť</span>
-            </Button>
-          </div>
-        </header>
-
-        {/* Main content with sidebar */}
-        <div className="flex flex-grow">
-          {/* Left sidebar with filters */}
-          <aside className="w-64 bg-white border-r p-4 hidden md:block flex-shrink-0">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">Vyhľadávanie</h3>
+    <>
+      <div className="flex flex-grow">
+        <aside className="w-64 bg-white border-r p-4 hidden md:flex flex-col flex-shrink-0">
+          <div className="flex-grow space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-medium">
+                {filteredJobs.length} {getOfferText(filteredJobs.length)}
+              </h3>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="default"
                   size="icon"
@@ -130,238 +185,598 @@ export default function JobPortal() {
                   <span className="sr-only">Zmeniť zobrazenie</span>
                 </Button>
               </div>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input placeholder="Hľadať pracovné ponuky..." className="pl-8 h-9" />
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-2">Kategória</h3>
-                <Select>
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue placeholder="Kategória" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Všetky kategórie</SelectItem>
-                    <SelectItem value="it">IT</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="finance">Financie</SelectItem>
-                    <SelectItem value="engineering">Strojárstvo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-2">Krajina</h3>
-                <Select>
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue placeholder="Krajina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Všetky krajiny</SelectItem>
-                    {countries.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        <div className="flex items-center gap-2">
-                          <div className={`flag flag-${country.code}`} />
-                          <span>{country.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-2">Typ práce</h3>
-                <div className="space-y-2">
-                  {jobTypes.map((type) => (
-                    <div key={type.id} className="flex items-center space-x-2">
-                      <Checkbox id={`job-type-${type.id}`} />
-                      <Label htmlFor={`job-type-${type.id}`} className="text-sm font-normal">
-                        {type.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-2">Ubytovanie</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="accommodation-provided" />
-                    <Label htmlFor="accommodation-provided" className="text-sm font-normal">
-                      Vybavené
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="accommodation-paid" />
-                    <Label htmlFor="accommodation-paid" className="text-sm font-normal">
-                      Hradené
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
             </div>
-          </aside>
-
-          {/* Mobile filter bar - only visible on small screens */}
-          <div className="md:hidden border-b bg-white px-4 py-3 flex flex-wrap items-center gap-3 w-full">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Hľadať pracovné ponuky..." className="pl-8 h-9 rounded-full" />
+              <Input
+                placeholder="Hľadať pracovné ponuky..."
+                className="pl-8 h-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-
-            <Button variant="outline" size="sm" className="rounded-full h-9">
-              <ListFilter className="h-4 w-4 mr-2" />
-              Filtre
-            </Button>
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium">Pracovná pozícia</h3>
+              <MultiSelect
+                options={[
+                  { value: "it", label: "IT" },
+                  { value: "marketing", label: "Marketing" },
+                  { value: "finance", label: "Financie" },
+                  { value: "engineering", label: "Strojárstvo" },
+                ]}
+                selected={selectedCategories}
+                onChange={setSelectedCategories}
+                placeholder="Všetky pozície"
+                className="w-full h-9"
+              />
+              <div className="flex flex-wrap gap-1">
+                {selectedCategories.map((category) => (
+                  <Badge key={category} variant="secondary" className="flex items-center gap-1 capitalize text-sm">
+                    {category}
+                    <button onClick={() => setSelectedCategories(prev => prev.filter(item => item !== category))} className="ml-1 rounded-full hover:bg-gray-300 p-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium">Krajina</h3>
+              <MultiSelect
+                options={countries.map(c => ({ value: c.code, label: c.name, flag: c.code }))}
+                selected={selectedCountries}
+                onChange={setSelectedCountries}
+                placeholder="Všetky krajiny"
+                className="w-full h-9"
+              />
+              <div className="flex flex-wrap gap-1">
+                {selectedCountries.map((countryCode) => {
+                  const country = countries.find(c => c.code === countryCode);
+                  return (
+                    <Badge key={countryCode} variant="secondary" className="flex items-center gap-1 text-sm">
+                      {country?.name}
+                      <button onClick={() => setSelectedCountries(prev => prev.filter(item => item !== countryCode))} className="ml-1 rounded-full hover:bg-gray-300 p-0.5">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-2">Typ práce</h3>
+              <div className="space-y-2">
+                {jobTypes.map((type) => (
+                  <div key={type.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`job-type-${type.id}`}
+                      checked={selectedJobTypes.includes(type.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedJobTypes(prev =>
+                          checked
+                            ? [...prev, type.id]
+                            : prev.filter(item => item !== type.id)
+                        )
+                      }}
+                    />
+                    <Label htmlFor={`job-type-${type.id}`} className="text-sm font-normal">
+                      {type.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium mb-2">Ubytovanie</h3>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="accommodation-provided"
+                    checked={isAccommodationProvided}
+                    onCheckedChange={(checked) => setIsAccommodationProvided(Boolean(checked))}
+                  />
+                  <Label htmlFor="accommodation-provided" className="text-sm font-normal">
+                    Vybavené
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="accommodation-paid"
+                    checked={isAccommodationPaid}
+                    onCheckedChange={(checked) => setIsAccommodationPaid(Boolean(checked))}
+                  />
+                  <Label htmlFor="accommodation-paid" className="text-sm font-normal">
+                    Hradené
+                  </Label>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button
+                variant="default"
+                size="lg"
+                className="w-full bg-black hover:bg-gray-800 text-white"
+                onClick={resetFilters}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Resetovať filtre
+              </Button>
+            </div>
           </div>
-
-          {/* Main content area */}
-          <main className="flex-grow p-6">
-            {selectedJobDetails ? (
-              <JobDetail job={selectedJobDetails} onBack={handleBackToList} />
-            ) : (
-              <>
-                {/* Job listings */}
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {jobs.map((job) => (
-                      <div
-                        key={job.id}
-                        className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
-                        onClick={() => handleJobClick(job.id)}
-                      >
-                        <div className="p-3 pb-1 relative">
+        </aside>
+        <div className="md:hidden border-b bg-white px-4 py-3 flex flex-wrap items-center gap-3 w-full">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input placeholder="Hľadať pracovné ponuky..." className="pl-8 h-9 rounded-full" />
+          </div>
+          <Button variant="outline" size="sm" className="rounded-full h-9">
+            <ListFilter className="h-4 w-4 mr-2" />
+            Filtre
+          </Button>
+        </div>
+        <main className="flex-grow p-6">
+          {selectedJobDetails ? (
+            <JobDetail job={selectedJobDetails} onBack={handleBackToList} />
+          ) : (
+            <>
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {paginatedJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer hover:bg-gray-100 flex flex-col"
+                      onClick={() => handleJobClick(job.id)}
+                    >
+                      <div className="p-3 pb-2 flex-grow h-full">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-base pr-2">
+                            {job.title.length > 50 ? `${job.title.substring(0, 50)}...` : job.title}
+                          </h3>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full flex-shrink-0 hover:bg-gray-200"
+                            onClick={(e) => toggleSaveJob(job.id, e)}
+                            title="Uložiť ponuku"
+                          >
+                            {savedJobs.includes(job.id) ? (
+                              <Bookmark className="h-6 w-6 text-[#0000FF]" fill="#0000FF" />
+                            ) : (
+                              <BookmarkPlus className="h-6 w-6" />
+                            )}
+                            <span className="sr-only">Uložiť ponuku</span>
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {job.country && (
+                            <div className="flex items-center gap-2">
+                              <div className={`flag flag-${job.country.code}`} />
+                              <span className="text-sm">{job.country.name}</span>
+                            </div>
+                          )}
                           {job.isTop && (
-                            <Badge className="absolute top-2 left-2 bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm pointer-events-none">
+                            <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm">
                               TOP
                             </Badge>
                           )}
-                          <div className="absolute top-2 right-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full"
-                              onClick={(e) => toggleSaveJob(job.id, e)}
-                              title="Uložiť ponuku"
-                            >
-                              {savedJobs.includes(job.id) ? (
-                                <Bookmark className="h-5 w-5 text-[#0000FF]" fill="#0000FF" />
-                              ) : (
-                                <BookmarkPlus className="h-5 w-5" />
-                              )}
-                              <span className="sr-only">Uložiť ponuku</span>
-                            </Button>
-                          </div>
-                          <div className="mt-8">
-                            <h3 className="font-medium text-sm">{job.title}</h3>
-                            <div className="flex items-center mt-2 gap-2">
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
-                                {job.jobType}
-                              </Badge>
-                              <div className={`flag flag-${job.country.code}`} />
-                            </div>
-                            <p className="text-xs font-medium mt-2">{job.salary}</p>
-                          </div>
-                        </div>
-                        <div className="h-[1px] bg-gray-100 mx-3 my-2"></div>
-                        <div className="px-3 pb-3 flex justify-between items-center">
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
+                            {job.jobType}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-medium mt-2">{job.salary}</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          {job.description.length > 150 ? `${job.description.substring(0, 150)}...` : job.description}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center mt-auto p-3 pt-0">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm bg-gray-50">
+                          {job.category}
+                        </Badge>
+                        <span className="text-[10px] text-gray-400">12.06.2025</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {paginatedJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer flex hover:bg-gray-100 h-40"
+                      onClick={() => handleJobClick(job.id)}
+                    >
+                      <div className="p-4 flex flex-col w-[400px] flex-shrink-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-lg">
+                            {job.title.length > 50 ? `${job.title.substring(0, 50)}...` : job.title}
+                          </h3>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {job.country && (
+                            <div className="flex items-center gap-2">
+                              <div className={`flag flag-${job.country.code}`} />
+                              <span className="text-xs">{job.country.name}</span>
+                            </div>
+                          )}
+                          {job.isTop && (
+                            <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm">
+                              TOP
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
+                            {job.jobType}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
                             {job.category}
                           </Badge>
-                          <span className="text-[10px] text-gray-400">12.06.2025</span>
                         </div>
+                        <p className="text-sm font-medium mt-2">{job.salary}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-5">
-                    {jobs.map((job) => (
-                      <div
-                        key={job.id}
-                        className="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:shadow-sm transition-shadow cursor-pointer"
-                        onClick={() => handleJobClick(job.id)}
-                      >
-                        <div className="p-4 flex justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium">{job.title}</h3>
-                              {job.isTop && (
-                                <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 pointer-events-none">
-                                  TOP
-                                </Badge>
-                              )}
-                              <div className={`flag flag-${job.country.code}`} />
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
-                                {job.jobType}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-sm bg-gray-50">
-                                {job.category}
-                              </Badge>
-                            </div>
-                            <p className="text-sm font-medium mt-2">{job.salary}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 rounded-full"
-                              onClick={(e) => toggleSaveJob(job.id, e)}
-                              title="Uložiť ponuku"
-                            >
-                              {savedJobs.includes(job.id) ? (
-                                <Bookmark className="h-6 w-6 text-[#0000FF]" fill="#0000FF" />
-                              ) : (
-                                <BookmarkPlus className="h-6 w-6" />
-                              )}
-                              <span className="sr-only">Uložiť ponuku</span>
-                            </Button>
-                            <span className="text-xs text-gray-400">12.06.2025</span>
-                          </div>
-                        </div>
+                      <div className="p-4 flex-1 flex items-start justify-start">
+                        <p className="text-base text-gray-600 text-left">
+                          {job.description.length > 150 ? `${job.description.substring(0, 150)}...` : job.description}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Pagination */}
-                <div className="flex justify-center mt-8">
-                  <nav className="flex items-center gap-1">
-                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
-                      <span className="sr-only">Predchádzajúca strana</span>
-                      <span>{"<"}</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md bg-gray-100">
-                      1
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                      2
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                      3
-                    </Button>
-                    <span className="px-2">...</span>
-                    <Button variant="outline" size="sm" className="h-8 w-8 rounded-md">
-                      8
-                    </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-md">
-                      <span className="sr-only">Nasledujúca strana</span>
-                      <span>{">"}</span>
-                    </Button>
-                  </nav>
+                      <div className="p-4 flex flex-col items-end justify-between">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-full hover:bg-gray-200"
+                          onClick={(e) => toggleSaveJob(job.id, e)}
+                          title="Uložiť ponuku"
+                        >
+                          {savedJobs.includes(job.id) ? (
+                            <Bookmark className="h-6 w-6 text-[#0000FF]" fill="#0000FF" />
+                          ) : (
+                            <BookmarkPlus className="h-6 w-6" />
+                          )}
+                          <span className="sr-only">Uložiť ponuku</span>
+                        </Button>
+                        <span className="text-xs text-gray-400 mt-auto">12.06.2025</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </>
-            )}
-          </main>
-        </div>
+              )}
+              <div className="flex justify-center mt-8">
+                <nav className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <span className="sr-only">Predchádzajúca strana</span>
+                    <span>{"<"}</span>
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 w-8 rounded-md ${currentPage === page ? "bg-gray-100" : ""}`}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-md"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <span className="sr-only">Nasledujúca strana</span>
+                    <span>{">"}</span>
+                  </Button>
+                </nav>
+              </div>
+            </>
+          )}
+        </main>
       </div>
+    </>
+  )
+}
 
-      {/* Footer */}
+function Dashboard({ setView }: { setView: (view: string) => void }) {
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    window.location.reload()
+  }
+
+  return (
+    <div className="flex flex-grow">
+      <aside className="w-64 bg-gray-100 p-4">
+        <nav className="flex flex-col space-y-2">
+          <button onClick={() => setView("dashboard")} className="font-bold text-left">Účet</button>
+          <button onClick={() => setView("add-ad")} className="text-left">Pridať inzerát</button>
+          <button onClick={() => setView("ads")} className="text-left">Moje inzeráty</button>
+          <button onClick={() => setView("payments")} className="text-left">Moje platby</button>
+          <button onClick={() => setView("settings")} className="text-left">Nastavenia</button>
+        </nav>
+      </aside>
+      <main className="flex-grow p-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Účet</h1>
+          <Button onClick={handleLogout} variant="outline">Odhlásiť sa</Button>
+        </div>
+        <p>Vitajte na vašom účte.</p>
+      </main>
+    </div>
+  )
+}
+
+function AddAdPage() {
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+
+  const handleAddAd = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { error } = await supabase.from("ads").insert({
+        user_id: user.id,
+        title,
+        description,
+      })
+      if (error) {
+        toast.error(error.message)
+      } else {
+        toast.success("Inzerát bol pridaný!")
+        setTitle("")
+        setDescription("")
+      }
+    }
+  }
+
+  return (
+    <div className="flex flex-grow">
+      <aside className="w-64 bg-gray-100 p-4">
+        <nav className="flex flex-col space-y-2">
+          <Link href="/" className="font-bold">Nástenka</Link>
+          <Link href="/add-ad">Pridať inzerát</Link>
+          <Link href="/ads">Moje inzeráty</Link>
+          <Link href="/payments">Moje platby</Link>
+          <Link href="/settings">Nastavenia</Link>
+        </nav>
+      </aside>
+      <main className="flex-grow p-6">
+        <h1 className="text-2xl font-bold">Pridať nový inzerát</h1>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="text-right">
+              Titulok
+            </Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Popis
+            </Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <Button onClick={handleAddAd} className="w-full">
+            Pridať inzerát
+          </Button>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function AdsPage({ ads }: { ads: any[] }) {
+  return (
+    <div className="flex flex-grow">
+      <aside className="w-64 bg-gray-100 p-4">
+        <nav className="flex flex-col space-y-2">
+          <Link href="/" className="font-bold">Nástenka</Link>
+          <Link href="/add-ad">Pridať inzerát</Link>
+          <Link href="/ads">Moje inzeráty</Link>
+          <Link href="/payments">Moje platby</Link>
+          <Link href="/settings">Nastavenia</Link>
+        </nav>
+      </aside>
+      <main className="flex-grow p-6">
+        <h1 className="text-2xl font-bold">Moje inzeráty</h1>
+        <div className="grid gap-4 py-4">
+          {ads.map((ad) => (
+            <div key={ad.id} className="border p-4 rounded-lg">
+              <h2 className="text-xl font-bold">{ad.title}</h2>
+              <p>{ad.description}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function SettingsPage() {
+  const handleDeleteAccount = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { error } = await supabase.auth.admin.deleteUser(user.id)
+      if (error) {
+        toast.error(error.message)
+      } else {
+        toast.success("Účet bol zmazaný!")
+      }
+    }
+  }
+
+  return (
+    <div className="flex flex-grow">
+      <aside className="w-64 bg-gray-100 p-4">
+        <nav className="flex flex-col space-y-2">
+          <Link href="/" className="font-bold">Nástenka</Link>
+          <Link href="/add-ad">Pridať inzerát</Link>
+          <Link href="/ads">Moje inzeráty</Link>
+          <Link href="/payments">Moje platby</Link>
+          <Link href="/settings">Nastavenia</Link>
+        </nav>
+      </aside>
+      <main className="flex-grow p-6">
+        <h1 className="text-2xl font-bold">Nastavenia</h1>
+        <div className="grid gap-4 py-4">
+          <Button onClick={handleDeleteAccount} variant="destructive">
+            Zmazať účet
+          </Button>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function PaymentsPage() {
+  return (
+    <div className="flex flex-grow">
+      <aside className="w-64 bg-gray-100 p-4">
+        <nav className="flex flex-col space-y-2">
+          <Link href="/" className="font-bold">Nástenka</Link>
+          <Link href="/add-ad">Pridať inzerát</Link>
+          <Link href="/ads">Moje inzeráty</Link>
+          <Link href="/payments">Moje platby</Link>
+          <Link href="/settings">Nastavenia</Link>
+        </nav>
+      </aside>
+      <main className="flex-grow p-6">
+        <h1 className="text-2xl font-bold">Moje platby</h1>
+        <p>Tu bude sekcia pre kontrolu platieb.</p>
+      </main>
+    </div>
+  )
+}
+
+
+export default function JobPortalPage() {
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [view, setView] = useState("jobs") // 'jobs', 'dashboard', 'add-ad', etc.
+  const [ads, setAds] = useState<any[]>([])
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null)
+        if (!session?.user) {
+          setView("jobs")
+        }
+      }
+    )
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    const initializeGoogleOneTap = async () => {
+      if (window.google?.accounts?.id) {
+        const nonce = generateNonce();
+        const hashedNonce = await hashNonce(nonce);
+
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          callback: async (response: any) => {
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token: response.credential,
+              nonce,
+            })
+            if (error) {
+              toast.error(error.message)
+            } else {
+              toast.success("Prihlásenie úspešné!")
+            }
+          },
+          nonce: hashedNonce,
+          use_fedcm_for_prompt: true,
+          auto_select: true,
+        })
+        window.google.accounts.id.prompt()
+      }
+    }
+
+    if (user) {
+      const fetchAds = async () => {
+        const { data, error } = await supabase
+          .from("ads")
+          .select("*")
+          .eq("user_id", user.id)
+        if (error) {
+          console.error("Error fetching ads:", error)
+        } else {
+          setAds(data)
+        }
+      }
+      fetchAds()
+    } else {
+      if (window.google) {
+        initializeGoogleOneTap()
+      } else {
+        const script = document.getElementById('google-gsi-client')
+        if (script) {
+          script.onload = initializeGoogleOneTap
+        }
+      }
+    }
+  }, [user])
+
+
+  const handleLogoClick = () => {
+    setView("jobs")
+  }
+
+  const renderContent = () => {
+    if (user && view !== "jobs") {
+      switch (view) {
+        case "dashboard":
+          return <Dashboard setView={setView} />
+        case "add-ad":
+          return <AddAdPage />
+        case "ads":
+          return <AdsPage ads={ads} />
+        case "settings":
+          return <SettingsPage />
+        case "payments":
+          return <PaymentsPage />
+        default:
+          return <Dashboard setView={setView} />
+      }
+    }
+    return <JobSearchPortal />
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="max-w-screen-2xl mx-auto w-full">
+        <header className="h-16 border-b bg-white px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={handleLogoClick}>
+              <Image src="/logo.png" alt="JobWest Logo" width={150} height={50} className="h-12 w-auto" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <AddAdButton setView={setView} />
+            <UserButton setView={setView} data-cy="user-button" />
+            <div id="google-one-tap"></div>
+          </div>
+        </header>
+        {renderContent()}
+      </div>
       <footer className="bg-black text-white py-8 px-4 mt-8">
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
