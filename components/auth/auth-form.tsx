@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import * as Sentry from "@sentry/nextjs";
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { GoogleIcon } from "../ui/google-icon"
@@ -23,6 +24,7 @@ export function AuthForm() {
       provider: "google",
     })
     if (error) {
+      Sentry.captureException(error);
       toast.error(error.message)
     }
   }
