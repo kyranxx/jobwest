@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
-import type { User } from "@supabase/supabase-js"
-import Link from "next/link"
-import { Plus } from "lucide-react"
+import { createClient } from "@/lib/utils/supabase/client"
+import type { User } from "@supabase/supabase-js";
+import { Plus } from "lucide-react";
 import { AuthForm } from "./auth-form"
 import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog"
 
-export function AddAdButton({ setView }: { setView: (view: string) => void }) {
+export function AddAdButton() {
+  const supabase = createClient()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export function AddAdButton({ setView }: { setView: (view: string) => void }) {
     })
 
     return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   if (user) {
     return (
@@ -36,7 +36,7 @@ export function AddAdButton({ setView }: { setView: (view: string) => void }) {
         size="icon"
         className="rounded-md h-10 w-10 bg-black hover:bg-gray-800"
         title="Pridať inzerát"
-        onClick={() => setView("add-ad")}
+        onClick={() => window.location.href = "/dashboard/add-ad"}
       >
         <Plus className="h-5 w-5" />
         <span className="sr-only">Pridať inzerát</span>
@@ -51,13 +51,13 @@ export function AddAdButton({ setView }: { setView: (view: string) => void }) {
           variant="default"
           size="icon"
           className="rounded-md h-10 w-10 bg-black hover:bg-gray-800"
-        title="Pridať inzerát"
+          title="Pridať inzerát"
         >
           <Plus className="h-5 w-5" />
           <span className="sr-only">Pridať inzerát</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <AuthForm />
       </DialogContent>
     </Dialog>

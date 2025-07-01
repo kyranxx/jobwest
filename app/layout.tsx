@@ -1,7 +1,6 @@
-import type React from "react"
-import "@/app/globals.css"
-import "@/app/flags.css"
-import { Inter } from "next/font/google"
+import type React from "react";
+import "@/app/globals.css";
+import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 

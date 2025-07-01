@@ -1,0 +1,16 @@
+export const countries = [
+  { code: 'us', name: 'United States', flag: 'us' },
+  { code: 'gb', name: 'United Kingdom', flag: 'gb' },
+  { code: 'fr', name: 'France', flag: 'fr' },
+  { code: 'ch', name: 'Switzerland', flag: 'ch' },
+  { code: 'de', name: 'Germany', flag: 'de' },
+  { code: 'at', name: 'Austria', flag: 'at' },
+  { code: 'ie', name: 'Ireland', flag: 'ie' },
+  { code: 'se', name: 'Sweden', flag: 'se' },
+  { code: 'nl', name: 'Netherlands', flag: 'nl' },
+  { code: 'es', name: 'Spain', flag: 'es' },
+  { code: 'pt', name: 'Portugal', flag: 'pt' },
+  { code: 'dk', name: 'Denmark', flag: 'dk' },
+  { code: 'it', name: 'Italy', flag: 'it' },
+  { code: 'pl', name: 'Poland', flag: 'pl' },
+];

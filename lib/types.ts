@@ -10,6 +10,7 @@ export type Job = {
   tags: string[];
   applications: number;
   // Properties for list view from page.tsx
+  country_code: string;
   country?: {
     code: string;
     name: string;
@@ -18,6 +19,7 @@ export type Job = {
   jobType: string;
   salary: string;
   isTop: boolean;
+  topped_at: string | null;
   accommodation_provided: boolean;
   accommodation_paid: boolean;
 };

@@ -11,14 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/utils/supabase/client"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { AuthForm } from "./auth-form"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
-import Link from "next/link"
-import { User } from "lucide-react"
+import { AuthForm } from "./auth-form";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { User } from "lucide-react";
 
-export function UserButton({ setView }: { setView: (view: string) => void }) {
+export function UserButton() {
+  const supabase = createClient()
   const [user, setUser] = useState<SupabaseUser | null>(null)
 
   useEffect(() => {
@@ -34,9 +34,9 @@ export function UserButton({ setView }: { setView: (view: string) => void }) {
     })
 
     return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [setView])
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -45,33 +45,14 @@ export function UserButton({ setView }: { setView: (view: string) => void }) {
 
   if (user) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full" onClick={() => setView("dashboard")}>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.name} />
-              <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.user_metadata.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setView("dashboard")}>
-            Účet
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleLogout}>
-            Odhlásiť sa
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button variant="ghost" className="relative h-8 w-8 rounded-full" asChild>
+        <a href="/dashboard">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.name} />
+            <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </a>
+      </Button>
     )
   }
 
