@@ -1,3 +1,4 @@
+// Test commit to trigger Vercel deployment
 import { createClient } from "@/lib/utils/supabase/server";
 import JobPortalClient from "@/components/ui/job-portal-client";
 import { Job } from "@/lib/types";
