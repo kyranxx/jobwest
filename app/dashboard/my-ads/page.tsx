@@ -18,10 +18,6 @@ import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function MyAdsPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
   return (
     <Card>
       <CardHeader>

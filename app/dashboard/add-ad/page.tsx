@@ -31,7 +31,7 @@ export default async function AddAdPage() {
       return redirect("/login")
     }
 
-    const { data, error } = await supabase.from("jobs").insert([
+    const { error } = await supabase.from("jobs").insert([
       {
         title: formData.get("title"),
         description: formData.get("description"),
@@ -51,10 +51,6 @@ export default async function AddAdPage() {
 
     return redirect("/dashboard/my-ads")
   }
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
   return (
     <Card>
       <CardHeader>

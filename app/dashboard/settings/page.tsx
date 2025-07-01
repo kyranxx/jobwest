@@ -11,10 +11,6 @@ import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function SettingsPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
   return (
     <div className="space-y-6">
       <Card>

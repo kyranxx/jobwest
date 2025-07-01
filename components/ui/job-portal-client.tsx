@@ -4,13 +4,11 @@ import { useState, useMemo } from "react"
 import {
   BookmarkPlus,
   Bookmark,
-  Search,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AddAdButton } from "@/components/auth/add-ad-button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import JobDetail from "@/components/ui/job-detail"
 import { toast } from "sonner"
@@ -28,11 +26,9 @@ import {
 } from "@/components/ui/pagination"
 import React from "react"
 export default function JobPortalClient({
-  user,
   jobs: initialJobs,
   userButton,
 }: {
-  user: SupabaseUser | null
   jobs: Job[]
   userButton: React.ReactElement
 }) {
@@ -47,7 +43,7 @@ export default function JobPortalClient({
   const [isAccommodationProvided, setIsAccommodationProvided] = useState(false)
   const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [jobsPerPage] = useState(20)
+  const jobsPerPage = 20
 
   const categories = useMemo(() => {
     const allCategories = initialJobs.map((job) => job.category)
@@ -107,10 +103,6 @@ export default function JobPortalClient({
     setSelectedJobTypes([])
     setIsAccommodationProvided(false)
     setIsAccommodationPaid(false)
-  }
-
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
   }
 
   const toggleSaveJob = (jobId: number) => {

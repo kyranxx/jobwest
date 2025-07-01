@@ -3,14 +3,6 @@
 import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/utils/supabase/client"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { AuthForm } from "./auth-form";
@@ -37,11 +29,6 @@ export function UserButton() {
       authListener.subscription.unsubscribe();
     };
   }, [supabase.auth]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.reload()
-  }
 
   if (user) {
     return (

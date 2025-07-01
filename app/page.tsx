@@ -27,7 +27,6 @@ export default async function JobPortalPage() {
 
   return (
     <JobPortalClient
-      user={user}
       jobs={jobs ?? []}
       userButton={<UserButton />}
     />

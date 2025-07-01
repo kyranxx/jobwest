@@ -17,10 +17,6 @@ import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function PaymentsPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
   return (
     <Card>
       <CardHeader>

@@ -16,10 +16,6 @@ import {
 import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function DashboardPage() {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
   return (
     <div className="space-y-6">
       <Card>
