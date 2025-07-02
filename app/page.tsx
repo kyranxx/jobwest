@@ -2,7 +2,6 @@
 import { createClient } from "@/lib/utils/supabase/server";
 import JobPortalClient from "@/components/ui/job-portal-client";
 import { Job } from "@/lib/types";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { UserButton } from "@/components/auth/user-button";
 import { countries } from "@/lib/countries_sk";
 
