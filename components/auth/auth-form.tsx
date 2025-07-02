@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/utils/supabase/client"
 import { toast } from "sonner"
 
@@ -52,8 +51,7 @@ export function AuthForm() {
       password,
     })
     if (error) {
-      toast.error(error.message);
-      Sentry.captureException(error);
+      toast.error(error.message)
     } else {
       toast.success("Skontrolujte si email pre potvrdzovací odkaz!")
     }
@@ -65,8 +63,7 @@ export function AuthForm() {
       password,
     })
     if (error) {
-      toast.error(error.message);
-      Sentry.captureException(error);
+      toast.error(error.message)
     } else {
       toast.success("Prihlásenie úspešné!")
     }
@@ -77,8 +74,7 @@ export function AuthForm() {
       provider: "google",
     })
     if (error) {
-      toast.error(error.message);
-      Sentry.captureException(error);
+      toast.error(error.message)
     }
   }
 
