@@ -66,7 +66,7 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" sideOffset={0}>
-        <ScrollArea className="max-h-72 overflow-y-auto">
+        <ScrollArea className="max-h-72 overflow-y-auto relative">
             <div className="space-y-1 p-1">
                 {options.map((option) => (
                     <Label
@@ -86,6 +86,7 @@ export function MultiSelect({
                     </Label>
                 ))}
             </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent"></div>
         </ScrollArea>
       </PopoverContent>
     </Popover>

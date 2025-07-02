@@ -139,7 +139,7 @@ export default function JobPortalClient({
             <aside
               className={`md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto ${
                 isFiltersVisible ? "block" : "hidden"
-              } md:block`}
+              } md:block z-20`}
             >
               <div className="p-4 space-y-4">
                 <Filters
@@ -170,7 +170,9 @@ export default function JobPortalClient({
               ) : (
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Všetky ponuky</h2>
+                    <h2 className="text-xl font-semibold">
+                      {filteredJobs.length} {getOfferText(filteredJobs.length)}
+                    </h2>
                     <Button
                       variant="outline"
                       className="md:hidden"
