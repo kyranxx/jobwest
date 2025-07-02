@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import {
   BookmarkPlus,
   Bookmark,
+  Filter,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -42,6 +43,7 @@ export default function JobPortalClient({
   const [isAccommodationProvided, setIsAccommodationProvided] = useState(false)
   const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false)
   const jobsPerPage = 20
 
   const categories = useMemo(() => {
@@ -134,7 +136,11 @@ export default function JobPortalClient({
         </header>
         <main className="flex-grow">
           <div className="grid grid-cols-1 md:grid-cols-12 items-start">
-            <aside className="md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+            <aside
+              className={`md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto ${
+                isFiltersVisible ? "block" : "hidden"
+              } md:block`}
+            >
               <div className="p-4 space-y-4">
                 <Filters
                   filteredJobsCount={filteredJobs.length}
@@ -165,6 +171,14 @@ export default function JobPortalClient({
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">Všetky ponuky</h2>
+                    <Button
+                      variant="outline"
+                      className="md:hidden"
+                      onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                    >
+                      <Filter className="mr-2 h-4 w-4" />
+                      Upraviť filtre
+                    </Button>
                   </div>
                   <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"}>
                     {paginatedJobs.map((job) => (
@@ -318,5 +332,5 @@ export default function JobPortalClient({
         </div>
       </footer>
     </div>
-  )
+  );
 }
