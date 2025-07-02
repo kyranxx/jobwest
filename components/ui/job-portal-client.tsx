@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import JobDetail from "@/components/ui/job-detail"
 import { toast } from "sonner"
 import { Job } from "@/lib/types"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { Filters } from "@/components/ui/filters"
 import { countries as countryData } from "@/lib/countries_sk"
 import {
@@ -32,7 +31,7 @@ export default function JobPortalClient({
   jobs: Job[]
   userButton: React.ReactElement
 }) {
-  const [jobs, setJobs] = useState(initialJobs)
+  const [jobs] = useState(initialJobs)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [savedJobs, setSavedJobs] = useState<number[]>([])

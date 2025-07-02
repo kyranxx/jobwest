@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function MyAdsPage() {
   return (

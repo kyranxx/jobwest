@@ -8,9 +8,6 @@ import { countries } from "@/lib/countries_sk";
 
 export default async function JobPortalPage() {
   const supabase = createClient();
-  const {
-    data: { user },
-  }: { data: { user: SupabaseUser | null } } = await supabase.auth.getUser();
   const { data: jobsData } = await supabase.from("jobs").select("*");
 
   const jobs = jobsData?.map((job) => {

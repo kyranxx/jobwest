@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function DashboardPage() {
   return (

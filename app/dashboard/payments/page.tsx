@@ -14,7 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function PaymentsPage() {
   return (
