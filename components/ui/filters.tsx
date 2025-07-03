@@ -77,6 +77,10 @@ export function Filters({
           </div>
         </div>
       )}
+      <div className="text-center mb-4">
+        <p className="text-xl font-bold">{filteredJobsCount}</p>
+        <p className="text-sm text-gray-500">{getOfferText(filteredJobsCount)}</p>
+      </div>
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Pracovná pozícia</h3>
         <MultiSelect
