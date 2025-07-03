@@ -6,6 +6,12 @@ import {
   Bookmark,
   Filter,
 } from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { useIsMobile } from "@/hooks/use-mobile"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -43,8 +49,8 @@ export default function JobPortalClient({
   const [isAccommodationProvided, setIsAccommodationProvided] = useState(false)
   const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [isFiltersVisible, setIsFiltersVisible] = useState(false)
   const jobsPerPage = 20
+  const isMobile = useIsMobile()
 
   const categories = useMemo(() => {
     const allCategories = initialJobs.map((job) => job.category)
@@ -136,35 +142,33 @@ export default function JobPortalClient({
         </header>
         <main className="flex-grow">
           <div className="grid grid-cols-1 md:grid-cols-12 items-start">
-            <aside
-              className={`md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto ${
-                isFiltersVisible ? "block" : "hidden"
-              } md:block z-20`}
-            >
-              <div className="p-4 space-y-4">
-                <Filters
-                  filteredJobsCount={filteredJobs.length}
-                  getOfferText={getOfferText}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                  selectedCategories={selectedCategories}
-                  setSelectedCategories={setSelectedCategories}
-                  categories={categories}
-                  selectedCountries={selectedCountries}
-                  setSelectedCountries={setSelectedCountries}
-                  countries={countries}
-                  selectedJobTypes={selectedJobTypes}
-                  setSelectedJobTypes={setSelectedJobTypes}
-                  jobTypes={jobTypes}
-                  isAccommodationProvided={isAccommodationProvided}
-                  setIsAccommodationProvided={setIsAccommodationProvided}
-                  isAccommodationPaid={isAccommodationPaid}
-                  setIsAccommodationPaid={setIsAccommodationPaid}
-                  resetFilters={resetFilters}
-                />
-              </div>
-            </aside>
-            <div className="md:col-span-10">
+            {!isMobile && (
+              <aside className="md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-20">
+                <div className="p-4 space-y-4">
+                  <Filters
+                    filteredJobsCount={filteredJobs.length}
+                    getOfferText={getOfferText}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                    selectedCategories={selectedCategories}
+                    setSelectedCategories={setSelectedCategories}
+                    categories={categories}
+                    selectedCountries={selectedCountries}
+                    setSelectedCountries={setSelectedCountries}
+                    countries={countries}
+                    selectedJobTypes={selectedJobTypes}
+                    setSelectedJobTypes={setSelectedJobTypes}
+                    jobTypes={jobTypes}
+                    isAccommodationProvided={isAccommodationProvided}
+                    setIsAccommodationProvided={setIsAccommodationProvided}
+                    isAccommodationPaid={isAccommodationPaid}
+                    setIsAccommodationPaid={setIsAccommodationPaid}
+                    resetFilters={resetFilters}
+                  />
+                </div>
+              </aside>
+            )}
+            <div className={isMobile ? "col-span-1" : "md:col-span-10"}>
               {selectedJob ? (
                 <JobDetail job={selectedJob} onBack={() => setSelectedJob(null)} />
               ) : (
@@ -173,14 +177,38 @@ export default function JobPortalClient({
                     <h2 className="text-xl font-semibold">
                       {filteredJobs.length} {getOfferText(filteredJobs.length)}
                     </h2>
-                    <Button
-                      variant="outline"
-                      className="md:hidden"
-                      onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                    >
-                      <Filter className="mr-2 h-4 w-4" />
-                      Upraviť filtre
-                    </Button>
+                    {isMobile && (
+                      <Sheet>
+                        <SheetTrigger asChild>
+                          <Button variant="outline">
+                            <Filter className="mr-2 h-4 w-4" />
+                            Upraviť filtre
+                          </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-full max-w-sm overflow-y-auto">
+                          <Filters
+                            filteredJobsCount={filteredJobs.length}
+                            getOfferText={getOfferText}
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            selectedCategories={selectedCategories}
+                            setSelectedCategories={setSelectedCategories}
+                            categories={categories}
+                            selectedCountries={selectedCountries}
+                            setSelectedCountries={setSelectedCountries}
+                            countries={countries}
+                            selectedJobTypes={selectedJobTypes}
+                            setSelectedJobTypes={setSelectedJobTypes}
+                            jobTypes={jobTypes}
+                            isAccommodationProvided={isAccommodationProvided}
+                            setIsAccommodationProvided={setIsAccommodationProvided}
+                            isAccommodationPaid={isAccommodationPaid}
+                            setIsAccommodationPaid={setIsAccommodationPaid}
+                            resetFilters={resetFilters}
+                          />
+                        </SheetContent>
+                      </Sheet>
+                    )}
                   </div>
                   <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"}>
                     {paginatedJobs.map((job) => (
