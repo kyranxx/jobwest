@@ -6,7 +6,8 @@ import { MultiSelect } from "@/components/ui/multi-select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { RotateCcw, X, ListFilter, LayoutGrid } from "lucide-react"
+import { RotateCcw, X, LayoutGrid, ListFilter } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface FiltersProps {
   filteredJobsCount: number
@@ -49,8 +50,33 @@ export function Filters({
   setIsAccommodationPaid,
   resetFilters,
 }: FiltersProps) {
+  const isMobile = useIsMobile()
+
   return (
     <div className="space-y-6 p-4">
+      {!isMobile && (
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Zobrazenie</h3>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "outline"}
+              onClick={() => setViewMode("grid")}
+              className="flex-1"
+            >
+              <LayoutGrid className="h-5 w-5 mr-2" />
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "outline"}
+              onClick={() => setViewMode("list")}
+              className="flex-1"
+            >
+              <ListFilter className="h-5 w-5 mr-2" />
+              List
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Pracovná pozícia</h3>
         <MultiSelect
