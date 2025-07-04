@@ -44,7 +44,7 @@ export default function JobPortalClient({
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [savedJobs, setSavedJobs] = useState<number[]>([])
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode] = useState<"grid" | "list">("grid")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
@@ -52,7 +52,6 @@ export default function JobPortalClient({
   const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const jobsPerPage = 20
-  const isMobile = useIsMobile()
   const [scrollPosition, setScrollPosition] = useState(0)
   const mainContainerRef = useRef<HTMLDivElement>(null)
 
