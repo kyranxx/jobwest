@@ -11,7 +11,6 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { useIsMobile } from "@/hooks/use-mobile"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
