@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   BookmarkPlus,
   Bookmark,
@@ -20,7 +20,9 @@ import { Badge } from "@/components/ui/badge"
 import JobDetail from "@/components/ui/job-detail"
 import { toast } from "sonner"
 import { Job } from "@/lib/types"
-import { Filters } from "@/components/ui/filters"
+import { QuickFilters } from "@/components/ui/quick-filters"
+import { MoreFilters } from "@/components/ui/more-filters"
+import { X } from "lucide-react"
 import { countries as countryData } from "@/lib/countries_sk"
 import {
   Pagination,
@@ -51,6 +53,25 @@ export default function JobPortalClient({
   const [currentPage, setCurrentPage] = useState(1)
   const jobsPerPage = 20
   const isMobile = useIsMobile()
+  const [scrollPosition, setScrollPosition] = useState(0)
+  const mainContainerRef = useRef<HTMLDivElement>(null)
+
+  const handleSelectJob = (job: Job) => {
+    setScrollPosition(window.scrollY)
+    setSelectedJob(job)
+  }
+
+  const handleBack = () => {
+    setSelectedJob(null)
+  }
+
+  useEffect(() => {
+    if (selectedJob) {
+      window.scrollTo(0, 0)
+    } else {
+      window.scrollTo(0, scrollPosition)
+    }
+  }, [selectedJob, scrollPosition])
 
   const categories = useMemo(() => {
     const allCategories = initialJobs.map((job) => job.category)
@@ -142,64 +163,33 @@ export default function JobPortalClient({
         </header>
         <main className="flex-grow">
           <div className="grid grid-cols-1 md:grid-cols-12 items-start">
-            {!isMobile && (
-              <aside className="md:col-span-2 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-20">
-                <div className="p-4 space-y-4">
-                  <Filters
-                    filteredJobsCount={filteredJobs.length}
-                    getOfferText={getOfferText}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
-                    selectedCategories={selectedCategories}
-                    setSelectedCategories={setSelectedCategories}
-                    categories={categories}
-                    selectedCountries={selectedCountries}
-                    setSelectedCountries={setSelectedCountries}
-                    countries={countries}
-                    selectedJobTypes={selectedJobTypes}
-                    setSelectedJobTypes={setSelectedJobTypes}
-                    jobTypes={jobTypes}
-                    isAccommodationProvided={isAccommodationProvided}
-                    setIsAccommodationProvided={setIsAccommodationProvided}
-                    isAccommodationPaid={isAccommodationPaid}
-                    setIsAccommodationPaid={setIsAccommodationPaid}
-                    resetFilters={resetFilters}
-                  />
-                </div>
-              </aside>
-            )}
-            <div className={isMobile ? "col-span-1" : "md:col-span-10"}>
+            <div className="col-span-1 md:col-span-12" ref={mainContainerRef}>
               {selectedJob ? (
-                <JobDetail job={selectedJob} onBack={() => setSelectedJob(null)} />
+                <JobDetail job={selectedJob} onBack={handleBack} />
               ) : (
                 <div className="p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">
-                      {filteredJobs.length} {getOfferText(filteredJobs.length)}
-                    </h2>
-                    {isMobile && (
+                  <div className="mb-8">
+                    <QuickFilters
+                      selectedCategories={selectedCategories}
+                      setSelectedCategories={setSelectedCategories}
+                      categories={categories}
+                      selectedCountries={selectedCountries}
+                      setSelectedCountries={setSelectedCountries}
+                      countries={countries}
+                      selectedJobTypes={selectedJobTypes}
+                      setSelectedJobTypes={setSelectedJobTypes}
+                      jobTypes={jobTypes}
+                    />
+                    <div className="flex justify-end mt-4">
                       <Sheet>
                         <SheetTrigger asChild>
                           <Button variant="outline">
                             <Filter className="mr-2 h-4 w-4" />
-                            Upraviť filtre
+                            Viac filtrov
                           </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-full max-w-sm overflow-y-auto">
-                          <Filters
-                            filteredJobsCount={filteredJobs.length}
-                            getOfferText={getOfferText}
-                            viewMode={viewMode}
-                            setViewMode={setViewMode}
-                            selectedCategories={selectedCategories}
-                            setSelectedCategories={setSelectedCategories}
-                            categories={categories}
-                            selectedCountries={selectedCountries}
-                            setSelectedCountries={setSelectedCountries}
-                            countries={countries}
-                            selectedJobTypes={selectedJobTypes}
-                            setSelectedJobTypes={setSelectedJobTypes}
-                            jobTypes={jobTypes}
+                        <SheetContent side="right" className="w-full max-w-sm overflow-y-auto">
+                          <MoreFilters
                             isAccommodationProvided={isAccommodationProvided}
                             setIsAccommodationProvided={setIsAccommodationProvided}
                             isAccommodationPaid={isAccommodationPaid}
@@ -208,14 +198,68 @@ export default function JobPortalClient({
                           />
                         </SheetContent>
                       </Sheet>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {selectedCategories.map((category) => (
+                      <Badge key={category} variant="secondary" className="flex items-center gap-1 capitalize">
+                        {category}
+                        <button onClick={() => setSelectedCategories(selectedCategories.filter(item => item !== category))} className="rounded-full hover:bg-gray-300 p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                    {selectedCountries.map((countryCode) => {
+                      const country = countries.find(c => c.code === countryCode);
+                      return (
+                        <Badge key={countryCode} variant="secondary" className="flex items-center gap-2">
+                          {country && <div className={`flag flag-${country.flag} shrink-0`} />}
+                          {country?.name}
+                          <button onClick={() => setSelectedCountries(selectedCountries.filter(item => item !== countryCode))} className="ml-1 rounded-full hover:bg-gray-300 p-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                    {selectedJobTypes.map((jobType) => {
+                      const type = jobTypes.find(t => t.id === jobType);
+                      return (
+                        <Badge key={jobType} variant="secondary" className="flex items-center gap-1">
+                          {type?.label}
+                          <button onClick={() => setSelectedJobTypes(selectedJobTypes.filter(item => item !== jobType))} className="rounded-full hover:bg-gray-300 p-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                    {isAccommodationProvided && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        Ubytovanie zabezpečené
+                        <button onClick={() => setIsAccommodationProvided(false)} className="rounded-full hover:bg-gray-300 p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
                     )}
+                    {isAccommodationPaid && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        Ubytovanie hradené
+                        <button onClick={() => setIsAccommodationPaid(false)} className="rounded-full hover:bg-gray-300 p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">
+                      {filteredJobs.length} {getOfferText(filteredJobs.length)}
+                    </h2>
                   </div>
                   <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"}>
                     {paginatedJobs.map((job) => (
                       <div
                         key={job.id}
                         className="bg-white p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow relative flex flex-col h-full overflow-hidden"
-                        onClick={() => setSelectedJob(job)}
+                        onClick={() => handleSelectJob(job)}
                       >
                         {job.isTop && (
                           <div className="absolute top-0 left-0 w-0 h-0 border-t-[30px] border-t-blue-600 border-r-[30px] border-r-transparent">
