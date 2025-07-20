@@ -22,4 +22,6 @@ export type Job = {
   topped_at: string | null;
   accommodation_provided: boolean;
   accommodation_paid: boolean;
+  companyName?: string;
+  contactInfo?: string;
 };

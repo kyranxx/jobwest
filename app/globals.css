@@ -92,3 +92,16 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+[data-radix-dropdown-menu-content] {
+  box-shadow: none !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+[data-radix-dropdown-menu-content]:after {
+  content: none !important;
+}

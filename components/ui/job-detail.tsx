@@ -14,17 +14,16 @@ interface JobDetailProps {
 export default function JobDetail({ job, onBack }: JobDetailProps) {
   return (
     <div className="bg-white rounded-lg border-2 border-gray-200 p-4 sm:p-6">
-      <Button variant="ghost" onClick={onBack} className="mb-4 -ml-4 sm:ml-0">
+      <Button
+        variant="outline"
+        onClick={onBack}
+        className="mb-4 -ml-4 sm:ml-0 bg-gray-100 hover:bg-gray-200"
+      >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Späť na zoznam
       </Button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mb-4">
         <h2 className="text-xl sm:text-2xl font-bold">{job.title}</h2>
-        {job.isTop && (
-          <Badge className="bg-black text-white text-xs font-medium px-2 py-0.5 rounded-sm mt-2 sm:mt-0 self-start">
-            TOP
-          </Badge>
-        )}
       </div>
       <div className="flex flex-wrap items-center gap-2 mt-2 mb-4">
         <Badge variant="outline" className="text-sm px-3 py-1 rounded-md bg-gray-50">
@@ -58,9 +57,11 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
           </div>
         )}
       </div>
-      <Button size="lg" className="mt-6 w-full sm:w-auto text-base">
-        Požiadať o túto prácu
-      </Button>
+      <div className="mt-6 border-t pt-4">
+        <h3 className="text-lg font-semibold">Kontakt</h3>
+        <p className="text-sm">{job.companyName}</p>
+        <p className="text-sm">{job.contactInfo}</p>
+      </div>
     </div>
   )
 }

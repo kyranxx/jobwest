@@ -1,11 +1,14 @@
-// Test commit to trigger Vercel deployment
 import { createClient } from "@/lib/utils/supabase/server";
 import JobPortalClient from "@/components/ui/job-portal-client";
 import { Job } from "@/lib/types";
-import { UserButton } from "@/components/auth/user-button";
 import { countries } from "@/lib/countries_sk";
 
-export default async function JobPortalPage() {
+export default async function JobPortalPage({
+  params,
+}: {
+  params: Promise<{ view?: string }>;
+}) {
+  const { view } = await params;
   const supabase = createClient();
   const { data: jobsData } = await supabase.from("jobs").select("*");
 
@@ -18,13 +21,15 @@ export default async function JobPortalPage() {
       isTop: job.is_top,
       jobType: job.job_type,
       country: country,
+      accommodation_provided: !!job.accommodation_provided,
+      accommodation_paid: !!job.accommodation_paid,
     };
   }) as Job[] | null;
 
   return (
     <JobPortalClient
       jobs={jobs ?? []}
-      userButton={<UserButton />}
+      view={view}
     />
   );
 }

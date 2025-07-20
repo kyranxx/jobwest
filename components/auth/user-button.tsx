@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/utils/supabase/client"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AuthForm } from "./auth-form";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { User } from "lucide-react";
+import Link from "next/link";
 
 export function UserButton() {
   const supabase = createClient()
@@ -32,14 +33,14 @@ export function UserButton() {
 
   if (user) {
     return (
-      <Button variant="ghost" className="relative h-8 w-8 rounded-full" asChild>
-        <a href="/dashboard">
+      <Link href="/ucet">
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.name} />
             <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
           </Avatar>
-        </a>
-      </Button>
+        </Button>
+      </Link>
     )
   }
 
@@ -49,7 +50,7 @@ export function UserButton() {
         <Button
           variant="default"
           size="icon"
-          className="rounded-md h-10 w-10 bg-black hover:bg-gray-800"
+          className="rounded-md h-10 w-10 bg-black hover:bg-dark-gray-800"
           title="Prihlásiť sa"
           data-cy="user-button"
         >
@@ -58,6 +59,12 @@ export function UserButton() {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Prihlásenie</DialogTitle>
+          <DialogDescription>
+            Pre pokračovanie sa musíte prihlásiť.
+          </DialogDescription>
+        </DialogHeader>
         <AuthForm />
       </DialogContent>
     </Dialog>

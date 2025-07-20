@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Script from "next/script"
 import { Button } from "@/components/ui/button"
 import {
   DialogDescription,
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClient } from "@/lib/utils/supabase/client"
 import { toast } from "sonner"
+import { useGoogleAuth } from "@/hooks/use-google-auth"
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -40,6 +42,7 @@ export function AuthForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
+  const { handleGoogleSignIn } = useGoogleAuth()
 
   const handleSignUp = async () => {
     if (password !== repeatPassword) {
@@ -69,30 +72,27 @@ export function AuthForm() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-    })
-    if (error) {
-      toast.error(error.message)
-    }
-  }
-
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>Vitajte</DialogTitle>
+      <Script
+        src={process.env.NEXT_PUBLIC_GOOGLE_GSI_SCRIPT_URL}
+        async
+        defer
+      />
+      <div className="p-4 sm:p-6">
+        <DialogHeader className="text-center">
+        <DialogTitle className="text-2xl font-bold text-blue-700">Vitajte</DialogTitle>
         <DialogDescription>
           Prihláste sa alebo si vytvorte účet pre pokračovanie.
         </DialogDescription>
       </DialogHeader>
       <Tabs defaultValue="signin" className="pt-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Prihlásiť sa</TabsTrigger>
-          <TabsTrigger value="signup">Zaregistrovať sa</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg">
+          <TabsTrigger value="signin" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white rounded-md">Prihlásiť sa</TabsTrigger>
+          <TabsTrigger value="signup" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white rounded-md">Zaregistrovať sa</TabsTrigger>
         </TabsList>
         <div className="grid gap-4 pt-4">
-          <Button onClick={handleGoogleSignIn} className="w-full flex items-center gap-2" variant="outline">
+          <Button onClick={handleGoogleSignIn} className="w-full flex items-center gap-2 bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
             <GoogleIcon />
             Pokračovať s Google
           </Button>
@@ -101,7 +101,7 @@ export function AuthForm() {
               <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-white px-2 text-gray-500">
                   Alebo pokračujte s emailom
                 </span>
               </div>
@@ -109,82 +109,73 @@ export function AuthForm() {
         </div>
         <TabsContent value="signin">
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="email-signin" className="sm:text-right">
-                Email
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="email-signin">Email</Label>
               <Input
                 id="email-signin"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
+                className="rounded-lg"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="password-signin" className="sm:text-right">
-                Heslo
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="password-signin">Heslo</Label>
               <Input
                 id="password-signin"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="col-span-3"
+                className="rounded-lg"
                 autoComplete="new-password"
               />
             </div>
-            <Button onClick={handleSignIn} className="w-full">
+            <Button onClick={handleSignIn} className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
               Prihlásiť sa
             </Button>
           </div>
         </TabsContent>
         <TabsContent value="signup">
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="email-signup" className="sm:text-right">
-                Email
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="email-signup">Email</Label>
               <Input
                 id="email-signup"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
+                className="rounded-lg"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="password-signup" className="sm:text-right">
-                Heslo
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="password-signup">Heslo</Label>
               <Input
                 id="password-signup"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="col-span-3"
+                className="rounded-lg"
                 autoComplete="new-password"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="repeat-password-signup" className="sm:text-right">
-                Zopakovať heslo
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="repeat-password-signup">Zopakovať heslo</Label>
               <Input
                 id="repeat-password-signup"
                 type="password"
                 value={repeatPassword}
                 onChange={(e) => setRepeatPassword(e.target.value)}
-                className="col-span-3"
+                className="rounded-lg"
                 autoComplete="new-password"
               />
             </div>
-            <Button onClick={handleSignUp} className="w-full">
+            <Button onClick={handleSignUp} className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
               Zaregistrovať sa
             </Button>
           </div>
         </TabsContent>
       </Tabs>
+    </div>
     </>
   )
 }

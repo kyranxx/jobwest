@@ -2,6 +2,10 @@
 
 import React from "react"
 import { MultiSelect } from "@/components/ui/multi-select"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { RotateCcw } from "lucide-react"
 
 interface QuickFiltersProps {
   selectedCategories: string[]
@@ -13,6 +17,11 @@ interface QuickFiltersProps {
   selectedJobTypes: string[]
   setSelectedJobTypes: (jobTypes: string[]) => void
   jobTypes: { id: string; label: string }[]
+  isAccommodationProvided: boolean
+  setIsAccommodationProvided: (isProvided: boolean) => void
+  isAccommodationPaid: boolean
+  setIsAccommodationPaid: (isPaid: boolean) => void
+  resetFilters: () => void
 }
 
 export function QuickFilters({
@@ -25,10 +34,15 @@ export function QuickFilters({
   selectedJobTypes,
   setSelectedJobTypes,
   jobTypes,
+  isAccommodationProvided,
+  setIsAccommodationProvided,
+  isAccommodationPaid,
+  setIsAccommodationPaid,
+  resetFilters,
 }: QuickFiltersProps) {
   return (
-    <div className="flex flex-col md:flex-row gap-4">
-      <div className="flex-1">
+    <div className="flex flex-col gap-4">
+      <div className="w-full">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Pracovná pozícia
         </label>
@@ -40,7 +54,7 @@ export function QuickFilters({
           className="w-full"
         />
       </div>
-      <div className="flex-1">
+      <div className="w-full">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Krajina
         </label>
@@ -56,9 +70,9 @@ export function QuickFilters({
           className="w-full"
         />
       </div>
-      <div className="flex-1">
+      <div className="w-full">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Typ práce
+          Druh práce
         </label>
         <MultiSelect
           options={jobTypes.map((jt) => ({
@@ -71,6 +85,32 @@ export function QuickFilters({
           className="w-full"
         />
       </div>
+      <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="accommodation-provided"
+            checked={isAccommodationProvided}
+            onCheckedChange={(checked) => setIsAccommodationProvided(Boolean(checked))}
+          />
+          <Label htmlFor="accommodation-provided">Ubytovanie zabezpečené</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="accommodation-paid"
+            checked={isAccommodationPaid}
+            onCheckedChange={(checked) => setIsAccommodationPaid(Boolean(checked))}
+          />
+          <Label htmlFor="accommodation-paid">Ubytovanie hradené</Label>
+        </div>
+      </div>
+      <Button
+        variant="default"
+        onClick={resetFilters}
+        className="w-full bg-black text-white hover:bg-dark-gray-800"
+      >
+        <RotateCcw className="h-4 w-4 mr-2" />
+        Resetovať
+      </Button>
     </div>
   )
 }
