@@ -15,7 +15,7 @@ export const metadata = {
   title: "PrácaVZahraničí - Nájdite si prácu v zahraničí",
   description: "Prehliadajte pracovné ponuky v zahraničí",
   icons: {
-    icon: "/logo.png",
+    icon: "/favicon.ico",
   },
     generator: 'v0.dev'
 }

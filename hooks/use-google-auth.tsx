@@ -1,10 +1,10 @@
 "use client"
 
-import { createClient } from "@/lib/utils/supabase/client"
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { toast } from "sonner"
 
 export function useGoogleAuth() {
-  const supabase = createClient()
+  const supabase = getSupabaseBrowserClient()
 
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({

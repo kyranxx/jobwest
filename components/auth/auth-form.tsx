@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Script from "next/script"
+import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import {
   DialogDescription,
@@ -11,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createClient } from "@/lib/utils/supabase/client"
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { toast } from "sonner"
 import { useGoogleAuth } from "@/hooks/use-google-auth"
 
@@ -37,22 +38,97 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const SignUpSchemaBase = z.object({
+  email: z.string().email({ message: "Neplatný email." }).trim().toLowerCase(),
+  password: z
+    .string()
+    .min(8, { message: "Heslo musí mať aspoň 8 znakov." })
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, {
+      message:
+        "Heslo musí obsahovať aspoň jedno veľké písmeno, jedno malé písmeno a jedno číslo.",
+    }),
+  repeatPassword: z.string(),
+})
+
 export function AuthForm() {
-  const supabase = createClient()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [repeatPassword, setRepeatPassword] = useState("")
+  const supabase = getSupabaseBrowserClient()
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    repeatPassword: "",
+  })
+  const [formErrors, setFormErrors] = useState({
+    email: "",
+    password: "",
+    repeatPassword: "",
+  })
   const { handleGoogleSignIn } = useGoogleAuth()
+  const [loginAttempts, setLoginAttempts] = useState(0)
+  const [isLoginDisabled, setIsLoginDisabled] = useState(false)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  useEffect(() => {
+    const checkEmail = async () => {
+      if (formData.email) {
+        const result = SignUpSchemaBase.pick({ email: true }).safeParse({
+          email: formData.email,
+        })
+        if (result.success) {
+          const response = await fetch("/api/check-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: formData.email }),
+          })
+          const data = await response.json()
+          if (data.exists) {
+            setFormErrors(prev => ({
+              ...prev,
+              email: "Tento email je už zaregistrovaný.",
+            }))
+          } else {
+            setFormErrors(prev => ({ ...prev, email: "" }))
+          }
+        }
+      }
+    }
+    const debounce = setTimeout(() => {
+      checkEmail()
+    }, 500)
+    return () => clearTimeout(debounce)
+  }, [formData.email])
+
+  const SignUpSchema = SignUpSchemaBase.refine(
+    data => data.password === data.repeatPassword,
+    {
+      message: "Heslá sa nezhodujú.",
+      path: ["repeatPassword"],
+    },
+  )
+
+  const SignInSchema = z.object({
+    email: z.string().email({ message: "Neplatný email." }).trim().toLowerCase(),
+    password: z.string().min(1, { message: "Heslo je povinné." }),
+  })
 
   const handleSignUp = async () => {
-    if (password !== repeatPassword) {
-      toast.error("Heslá sa nezhodujú.")
+    setFormErrors({ email: "", password: "", repeatPassword: "" })
+    const result = SignUpSchema.safeParse(formData)
+    if (!result.success) {
+      const newErrors = { email: "", password: "", repeatPassword: "" };
+      result.error.errors.forEach(err => {
+        if (err.path) {
+          newErrors[err.path[0] as keyof typeof newErrors] = err.message;
+        }
+      });
+      setFormErrors(newErrors);
       return
     }
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+
+    const { error } = await supabase.auth.signUp(result.data)
     if (error) {
       toast.error(error.message)
     } else {
@@ -61,14 +137,61 @@ export function AuthForm() {
   }
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    if (isLoginDisabled) {
+      toast.error("Prihlasovanie je dočasne zablokované.")
+      return
+    }
+    setFormErrors({ email: "", password: "", repeatPassword: "" })
+    const result = SignInSchema.safeParse(formData)
+    if (!result.success) {
+      const newErrors = { email: "", password: "", repeatPassword: "" };
+      result.error.errors.forEach(err => {
+        if (err.path) {
+          newErrors[err.path[0] as keyof typeof newErrors] = err.message;
+        }
+      });
+      setFormErrors(newErrors);
+      return
+    }
+
+    const { error } = await supabase.auth.signInWithPassword(result.data)
     if (error) {
-      toast.error(error.message)
+      const newAttempts = loginAttempts + 1
+      setLoginAttempts(newAttempts)
+
+      let lockoutTime = 0
+      let message = ""
+
+      if (newAttempts === 2) {
+        lockoutTime = 10000 // 10 seconds
+        message = "Príliš veľa pokusov. Skúste to znova o 10 sekúnd."
+      } else if (newAttempts === 3) {
+        lockoutTime = 30000 // 30 seconds
+        message = "Príliš veľa pokusov. Skúste to znova o 30 sekúnd."
+      } else if (newAttempts >= 4) {
+        lockoutTime = 60000 // 1 minute
+        message = "Príliš veľa pokusov. Skúste to znova o 1 minútu."
+      }
+
+      if (lockoutTime > 0) {
+        setIsLoginDisabled(true)
+        toast.error(message)
+        setTimeout(() => {
+          setIsLoginDisabled(false)
+          if (newAttempts >= 4) {
+            setLoginAttempts(0)
+          }
+        }, lockoutTime)
+      } else {
+        if (error.message === "Invalid login credentials") {
+          toast.error("Nesprávne prihlasovacie údaje.")
+        } else {
+          toast.error(error.message)
+        }
+      }
     } else {
       toast.success("Prihlásenie úspešné!")
+      setLoginAttempts(0)
     }
   }
 
@@ -108,71 +231,104 @@ export function AuthForm() {
             </div>
         </div>
         <TabsContent value="signin">
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email-signin">Email</Label>
-              <Input
-                id="email-signin"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-lg"
-              />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSignIn()
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email-signin">Email</Label>
+                <Input
+                  id="email-signin"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="rounded-lg"
+                  autoComplete="username"
+                />
+                {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password-signin">Heslo</Label>
+                <Input
+                  id="password-signin"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="rounded-lg"
+                  autoComplete="current-password"
+                />
+                {formErrors.password && <p className="text-red-500 text-sm">{formErrors.password}</p>}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg"
+                disabled={isLoginDisabled}
+              >
+                Prihlásiť sa
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password-signin">Heslo</Label>
-              <Input
-                id="password-signin"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-lg"
-                autoComplete="new-password"
-              />
-            </div>
-            <Button onClick={handleSignIn} className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
-              Prihlásiť sa
-            </Button>
-          </div>
+          </form>
         </TabsContent>
         <TabsContent value="signup">
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email-signup">Email</Label>
-              <Input
-                id="email-signup"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="rounded-lg"
-              />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSignUp()
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email-signup">Email</Label>
+                <Input
+                  id="email-signup"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="rounded-lg"
+                  autoComplete="email"
+                />
+                {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password-signup">Heslo</Label>
+                <Input
+                  id="password-signup"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="rounded-lg"
+                  autoComplete="new-password"
+                />
+                {formErrors.password && <p className="text-red-500 text-sm">{formErrors.password}</p>}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="repeatPassword-signup">Zopakovať heslo</Label>
+                <Input
+                  id="repeatPassword-signup"
+                  name="repeatPassword"
+                  type="password"
+                  value={formData.repeatPassword}
+                  onChange={handleInputChange}
+                  className="rounded-lg"
+                  autoComplete="new-password"
+                />
+                {formErrors.repeatPassword && <p className="text-red-500 text-sm">{formErrors.repeatPassword}</p>}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg"
+              >
+                Zaregistrovať sa
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password-signup">Heslo</Label>
-              <Input
-                id="password-signup"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-lg"
-                autoComplete="new-password"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="repeat-password-signup">Zopakovať heslo</Label>
-              <Input
-                id="repeat-password-signup"
-                type="password"
-                value={repeatPassword}
-                onChange={(e) => setRepeatPassword(e.target.value)}
-                className="rounded-lg"
-                autoComplete="new-password"
-              />
-            </div>
-            <Button onClick={handleSignUp} className="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg">
-              Zaregistrovať sa
-            </Button>
-          </div>
+          </form>
         </TabsContent>
       </Tabs>
     </div>

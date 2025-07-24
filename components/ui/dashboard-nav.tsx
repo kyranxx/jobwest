@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/utils/supabase/client";
-import { Briefcase, CreditCard, FilePlus2, LogOut, Settings } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client";
+import { Briefcase, CreditCard, FilePlus2, LogOut, Settings } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 export default function DashboardNav() {
   const pathname = usePathname();
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

@@ -3,7 +3,7 @@
 import React from "react"
 import { QuickFilters } from "@/components/ui/quick-filters"
 import { Button } from "@/components/ui/button"
-import { LayoutGrid, Rows3 } from "lucide-react"
+import { LayoutGrid, Rows3 } from "@/components/ui/icons"
 
 interface FiltersProps {
   selectedCategories: string[]

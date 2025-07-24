@@ -1,15 +1,29 @@
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { z } from "zod";
+import { supabaseConfig as clientSupabaseConfig } from "./client-config";
 
-if (!supabaseUrl) {
-  throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_URL");
-}
+const envSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url({
+    message: "Invalid Supabase URL in environment variables.",
+  }),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
+    message: "Missing Supabase anon key in environment variables.",
+  }),
+});
 
-if (!supabaseAnonKey) {
-  throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
+const parsedEnv = envSchema.safeParse({
+  NEXT_PUBLIC_SUPABASE_URL: clientSupabaseConfig.url,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: clientSupabaseConfig.anonKey,
+});
+
+if (!parsedEnv.success) {
+  console.error(
+    "❌ Invalid environment variables:",
+    parsedEnv.error.flatten().fieldErrors
+  );
+  throw new Error("Invalid environment variables.");
 }
 
 export const supabaseConfig = {
-  url: supabaseUrl,
-  anonKey: supabaseAnonKey,
+  url: parsedEnv.data.NEXT_PUBLIC_SUPABASE_URL,
+  anonKey: parsedEnv.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 };

@@ -3,28 +3,44 @@
 import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/utils/supabase/client"
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AuthForm } from "./auth-form";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import { User } from "lucide-react";
+import { User } from "@/components/ui/icons";
 import Link from "next/link";
+import { getUserProfile } from "@/lib/utils/supabase/user";
 
 export function UserButton() {
-  const supabase = createClient()
+  const supabase = getSupabaseBrowserClient()
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchUserAndProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        const profile = await getUserProfile(user);
+        setAvatarUrl(profile?.image || user.user_metadata.picture || null);
+      }
+    };
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null)
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          getUserProfile(currentUser).then(profile => {
+            setAvatarUrl(profile?.image || currentUser.user_metadata.picture || null);
+          });
+        } else {
+          setAvatarUrl(null);
+        }
       }
-    )
+    );
 
-    // Initial check
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-    })
+    fetchUserAndProfile();
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -36,7 +52,7 @@ export function UserButton() {
       <Link href="/ucet">
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.name} />
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={user.user_metadata.name || ''} />}
             <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>

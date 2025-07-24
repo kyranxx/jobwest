@@ -1,15 +1,10 @@
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseServerClient } from "@/lib/utils/supabase/server";
 import JobPortalClient from "@/components/ui/job-portal-client";
 import { Job } from "@/lib/types";
 import { countries } from "@/lib/countries_sk";
 
-export default async function JobPortalPage({
-  params,
-}: {
-  params: Promise<{ view?: string }>;
-}) {
-  const { view } = await params;
-  const supabase = createClient();
+export default async function JobPortalPage() {
+  const supabase = getSupabaseServerClient();
   const { data: jobsData } = await supabase.from("jobs").select("*");
 
   const jobs = jobsData?.map((job) => {
@@ -26,10 +21,5 @@ export default async function JobPortalPage({
     };
   }) as Job[] | null;
 
-  return (
-    <JobPortalClient
-      jobs={jobs ?? []}
-      view={view}
-    />
-  );
+  return <JobPortalClient jobs={jobs ?? []} />;
 }

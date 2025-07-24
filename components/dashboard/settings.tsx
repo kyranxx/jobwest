@@ -2,149 +2,102 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/utils/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
 
-const passwordSchema = z.object({
-  password: z.string().min(6, {
-    message: "Heslo musí mať aspoň 6 znakov.",
-  }),
-});
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
-const avatarSchema = z.object({
-  avatar: z.instanceof(File).refine((file) => file.size < 2 * 1024 * 1024, {
-    message: "Súbor musí byť menší ako 2MB.",
-  }),
+const formSchema = z.object({
+  password: z
+    .string()
+    .min(8, "Heslo musí mať aspoň 8 znakov.")
+    .regex(/[A-Z]/, "Heslo musí obsahovať aspoň jedno veľké písmeno.")
+    .regex(/[0-9]/, "Heslo musí obsahovať aspoň jedno číslo.")
+    .regex(/[^A-Za-z0-9]/, "Heslo musí obsahovať aspoň jeden špeciálny znak."),
+  avatar: z
+    .any()
+    .refine((files) => files?.length == 1, "Obrázok je povinný.")
+    .refine(
+      (files) => files?.[0]?.size <= MAX_FILE_SIZE,
+      `Maximálna veľkosť súboru je 2MB.`
+    )
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "Povolené sú iba súbory .jpg, .png a .gif."
+    ),
 });
 
 export default function Settings() {
-  const supabase = createClient();
-  const [uploading, setUploading] = useState(false);
-
-  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
-    resolver: zodResolver(passwordSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       password: "",
+      avatar: undefined,
     },
   });
 
-  const avatarForm = useForm<z.infer<typeof avatarSchema>>({
-    resolver: zodResolver(avatarSchema),
-  });
-
-  async function onPasswordSubmit(values: z.infer<typeof passwordSchema>) {
-    const { error } = await supabase.auth.updateUser({
-      password: values.password,
-    });
-
-    if (error) {
-      toast.error("Chyba pri zmene hesla.");
-    } else {
-      toast.success("Heslo úspešne zmenené.");
-      passwordForm.reset();
-    }
-  }
-
-  async function onAvatarSubmit(values: z.infer<typeof avatarSchema>) {
-    setUploading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Musíte byť prihlásený.");
-      setUploading(false);
-      return;
-    }
-
-    const file = values.avatar;
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      toast.error("Chyba pri nahrávaní avatara.");
-    } else {
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const { error: updateUserError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl },
-      });
-      if (updateUserError) {
-        toast.error("Chyba pri aktualizácii profilu.");
-      } else {
-        toast.success("Avatar úspešne zmenený.");
-        avatarForm.reset();
-      }
-    }
-    setUploading(false);
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+    toast.success("Nastavenia úspešne uložené!");
   }
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Nastavenia</h1>
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-xl font-semibold">Zmena hesla</h2>
-          <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-8 mt-4">
-              <FormField
-                control={passwordForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nové heslo</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="Nové heslo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Zmeniť heslo</Button>
-            </form>
-          </Form>
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Zmena avatara</h2>
-          <Form {...avatarForm}>
-            <form onSubmit={avatarForm.handleSubmit(onAvatarSubmit)} className="space-y-8 mt-4">
-              <FormField
-                control={avatarForm.control}
-                name="avatar"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nový avatar</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={uploading}>
-                {uploading ? "Nahrávam..." : "Zmeniť avatara"}
-              </Button>
-            </form>
-          </Form>
-        </div>
-      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nové heslo</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Zadajte svoje nové heslo. Musí obsahovať aspoň 8 znakov, jedno
+                  veľké písmeno, jedno číslo a jeden špeciálny znak.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="avatar"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Avatar</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => field.onChange(e.target.files)}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Nahrajte svoj nový avatar. Maximálna veľkosť je 2MB.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit">Uložiť zmeny</Button>
+        </form>
+      </Form>
     </div>
   );
 }

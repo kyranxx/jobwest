@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   let cspHeader = `
     script-src 'self' https://accounts.google.com 'nonce-${nonce}' 'strict-dynamic';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
+    img-src 'self' blob: data: lh3.googleusercontent.com iuzmhwjdlywbhtgzuyib.supabase.co;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
@@ -17,9 +17,10 @@ export async function middleware(request: NextRequest) {
   `
   if (process.env.NODE_ENV === 'development') {
     cspHeader = `
-      script-src 'self' https://accounts.google.com 'unsafe-inline' 'unsafe-eval';
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' blob: data:;
+      script-src 'self' https://accounts.google.com https://www.google.com https://www.gstatic.com 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' https://accounts.google.com 'unsafe-inline';
+      frame-src 'self' https://accounts.google.com https://www.google.com;
+      img-src 'self' blob: data: lh3.googleusercontent.com iuzmhwjdlywbhtgzuyib.supabase.co;
       font-src 'self';
       object-src 'none';
       base-uri 'self';
@@ -94,7 +95,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return response
 }

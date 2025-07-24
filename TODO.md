@@ -14,7 +14,7 @@ Based on my comprehensive analysis of the JobWest codebase, here's my detailed r
 ### 2. __Security Vulnerabilities__
 
 - __Missing Environment Variable Validation__: No validation for `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- __Hardcoded Google Client Script__: Google authentication script is hardcoded in layout.tsx ✅ **DONE**
+- __Hardcoded Google Client Script__: Google authentication script is hardcoded in layout.tsx
 - __No Rate Limiting__: No protection against brute force attacks
 - __Missing Input Sanitization__: User inputs in auth forms aren't sanitized
 
@@ -96,10 +96,10 @@ Based on my comprehensive analysis of the JobWest codebase, here's my detailed r
 
 ### Immediate Actions (Priority 1)
 
-1. __Fix build__: Remove Sentry imports or add @sentry/nextjs ✅ **DONE**
+1. __Fix build__: Remove Sentry imports or add @sentry/nextjs
 2. __Remove duplicate use-mobile hook__
 3. __Delete unused src/ directory__
-4. __Add environment variable validation__ ✅ **DONE**
+4. __Add environment variable validation__
 
 ### Short-term Improvements (Priority 2)
 

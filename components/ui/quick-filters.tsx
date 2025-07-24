@@ -5,7 +5,7 @@ import { MultiSelect } from "@/components/ui/multi-select"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw } from "./icons"
 
 interface QuickFiltersProps {
   selectedCategories: string[]
@@ -43,10 +43,15 @@ export function QuickFilters({
   return (
     <div className="flex flex-col gap-4">
       <div className="w-full">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="work-position"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Pracovná pozícia
         </label>
         <MultiSelect
+          id="work-position"
+          name="work-position"
           options={categories}
           selected={selectedCategories}
           onChange={setSelectedCategories}
@@ -55,10 +60,15 @@ export function QuickFilters({
         />
       </div>
       <div className="w-full">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="country"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Krajina
         </label>
         <MultiSelect
+          id="country"
+          name="country"
           options={countries.map((c) => ({
             value: c.code,
             label: c.name,
@@ -71,10 +81,15 @@ export function QuickFilters({
         />
       </div>
       <div className="w-full">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="job-type"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           Druh práce
         </label>
         <MultiSelect
+          id="job-type"
+          name="job-type"
           options={jobTypes.map((jt) => ({
             value: jt.id,
             label: jt.label,
@@ -89,16 +104,22 @@ export function QuickFilters({
         <div className="flex items-center space-x-2">
           <Checkbox
             id="accommodation-provided"
+            name="accommodation-provided"
             checked={isAccommodationProvided}
-            onCheckedChange={(checked) => setIsAccommodationProvided(Boolean(checked))}
+            onCheckedChange={(checked) =>
+              setIsAccommodationProvided(Boolean(checked))
+            }
           />
           <Label htmlFor="accommodation-provided">Ubytovanie zabezpečené</Label>
         </div>
         <div className="flex items-center space-x-2">
           <Checkbox
             id="accommodation-paid"
+            name="accommodation-paid"
             checked={isAccommodationPaid}
-            onCheckedChange={(checked) => setIsAccommodationPaid(Boolean(checked))}
+            onCheckedChange={(checked) =>
+              setIsAccommodationPaid(Boolean(checked))
+            }
           />
           <Label htmlFor="accommodation-paid">Ubytovanie hradené</Label>
         </div>

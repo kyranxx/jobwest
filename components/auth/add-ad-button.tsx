@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/utils/supabase/client"
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import type { User } from "@supabase/supabase-js";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/ui/icons";
 import { AuthForm } from "./auth-form"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog"
 import Link from "next/link";
 
 export function AddAdButton() {
-  const supabase = createClient()
+  const supabase = getSupabaseBrowserClient()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {

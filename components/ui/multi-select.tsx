@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown } from "lucide-react"
+import { ChevronsUpDown } from "./icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,8 @@ interface MultiSelectProps {
   onChange: (selected: string[]) => void
   className?: string
   placeholder?: string
+  id?: string
+  name?: string
 }
 
 export function MultiSelect({
@@ -32,6 +34,8 @@ export function MultiSelect({
   onChange,
   className,
   placeholder = "Select options",
+  id,
+  name,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -47,6 +51,8 @@ export function MultiSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
+          name={name}
           variant="outline"
           role="combobox"
           aria-expanded={open}
