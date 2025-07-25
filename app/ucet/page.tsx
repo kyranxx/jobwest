@@ -1,11 +1,11 @@
 import MainDashboard from "@/components/dashboard/main-dashboard";
-import { Suspense } from "react";
-import UcetLoading from "./loading";
+import MyAds from "@/components/dashboard/my-ads";
 
-export default function UcetPage() {
+export default function DashboardPage() {
   return (
-    <Suspense fallback={<UcetLoading />}>
+    <div className="space-y-6">
       <MainDashboard />
-    </Suspense>
+      <MyAds />
+    </div>
   );
 }

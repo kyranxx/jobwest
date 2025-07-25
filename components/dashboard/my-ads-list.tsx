@@ -2,9 +2,10 @@
 
 import { type User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DeleteAdDialog from './delete-ad-dialog';
 import { getSupabaseBrowserClient } from '@/lib/utils/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 type Job = {
   id: string;
@@ -19,11 +20,19 @@ type MyAdsListProps = {
 };
 
 export default function MyAdsList({ jobs: initialJobs, user }: MyAdsListProps) {
+  const { user: authUser, loading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const router = useRouter();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !authUser) {
+      router.push('/');
+    }
+  }, [authUser, loading, router]);
 
   const handleDelete = async () => {
     if (selectedJob) {
@@ -42,6 +51,14 @@ export default function MyAdsList({ jobs: initialJobs, user }: MyAdsListProps) {
       }
     }
   };
+
+  if (loading) {
+    return <p>Načítavanie...</p>;
+  }
+
+  if (!authUser) {
+    return null;
+  }
 
   if (error) {
     return <p>Chyba: {error}</p>;
@@ -86,7 +103,7 @@ export default function MyAdsList({ jobs: initialJobs, user }: MyAdsListProps) {
           isOpen={isDeleteDialogOpen}
           onClose={() => setIsDeleteDialogOpen(false)}
           onConfirm={handleDelete}
-          userEmail={user?.email || ''}
+          userEmail={authUser?.email || ''}
         />
       )}
     </div>

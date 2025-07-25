@@ -7,9 +7,10 @@ import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AuthForm } from "./auth-form";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import { User } from "@/components/ui/icons";
+import { User, LogOut } from "@/components/ui/icons";
 import Link from "next/link";
 import { getUserProfile } from "@/lib/utils/supabase/user";
+import { signOut } from "@/app/auth/actions";
 
 export function UserButton() {
   const supabase = getSupabaseBrowserClient()
@@ -49,14 +50,27 @@ export function UserButton() {
 
   if (user) {
     return (
-      <Link href="/ucet">
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={user.user_metadata.name || ''} />}
-            <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/ucet">
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={user.user_metadata.name || ''} />}
+              <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </Link>
+        <form action={signOut}>
+          <Button 
+            type="submit"
+            variant="ghost" 
+            size="icon"
+            className="h-8 w-8"
+            title="Odhlásiť sa"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
     )
   }
 

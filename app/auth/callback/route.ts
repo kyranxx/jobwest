@@ -38,7 +38,8 @@ export async function GET(request: Request) {
         console.error('Error fetching user profile:', profileError);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // Redirect to dashboard after successful login
+      return NextResponse.redirect(`${origin}/ucet`);
     }
   }
 
