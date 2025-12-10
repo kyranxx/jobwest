@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
-import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
-import type { User } from "@supabase/supabase-js"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { useAuth } from "@/hooks/use-auth"
 import {
   BookmarkPlus,
   Bookmark,
@@ -31,8 +30,7 @@ export default function JobPortalClient({
 }: {
   jobs: Job[]
 }) {
-  const supabase = getSupabaseBrowserClient()
-  const [user, setUser] = useState<User | null>(null)
+  const { user } = useAuth()
   const [jobs] = useState(initialJobs)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -47,33 +45,17 @@ export default function JobPortalClient({
   const jobsPerPage = 20
   const [scrollPosition, setScrollPosition] = useState(0)
   const mainContainerRef = useRef<HTMLDivElement>(null)
+  const jobGridRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState(false)
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
-      }
-    )
-
-    // Initial check
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-    })
-
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [supabase.auth])
-
-  const handleSelectJob = (job: Job) => {
+  const handleSelectJob = useCallback((job: Job) => {
     setScrollPosition(window.scrollY)
     setSelectedJob(job)
-  }
+  }, [])
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setSelectedJob(null)
-  }
+  }, [])
 
   useEffect(() => {
     if (selectedJob) {
@@ -128,16 +110,29 @@ export default function JobPortalClient({
 
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm("")
     setSelectedCategories([])
     setSelectedCountries([])
     setSelectedJobTypes([])
     setIsAccommodationProvided(false)
     setIsAccommodationPaid(false)
-  }
+    setCurrentPage(1)
+  }, [])
 
-  const toggleSaveJob = (jobId: number) => {
+  const scrollToJobGrid = useCallback(() => {
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    })
+  }, [])
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+    scrollToJobGrid()
+  }, [scrollToJobGrid])
+
+  const toggleSaveJob = useCallback((jobId: number) => {
     if (!user) {
       toast.error("Na uloženie ponuky sa musíte prihlásiť.")
       return
@@ -153,7 +148,7 @@ export default function JobPortalClient({
     } else {
       toast.info("Uloženie zrušené")
     }
-  }
+  }, [user, savedJobs])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -230,6 +225,7 @@ export default function JobPortalClient({
                 ) : (
                   <div className="p-4">
                     <div
+                      ref={jobGridRef}
                       className={
                         viewMode === "grid"
                           ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
@@ -306,7 +302,10 @@ export default function JobPortalClient({
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault()
-                                  setCurrentPage((prev) => Math.max(prev - 1, 1))
+                                  const newPage = Math.max(currentPage - 1, 1)
+                                  if (newPage !== currentPage) {
+                                    handlePageChange(newPage)
+                                  }
                                 }}
                               >
                                 Predchádzajúce
@@ -319,7 +318,7 @@ export default function JobPortalClient({
                                   isActive={currentPage === i + 1}
                                   onClick={(e) => {
                                     e.preventDefault()
-                                    setCurrentPage(i + 1)
+                                    handlePageChange(i + 1)
                                   }}
                                 >
                                   {i + 1}
@@ -331,9 +330,10 @@ export default function JobPortalClient({
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault()
-                                  setCurrentPage((prev) =>
-                                    Math.min(prev + 1, totalPages)
-                                  )
+                                  const newPage = Math.min(currentPage + 1, totalPages)
+                                  if (newPage !== currentPage) {
+                                    handlePageChange(newPage)
+                                  }
                                 }}
                               >
                                 Ďalšie

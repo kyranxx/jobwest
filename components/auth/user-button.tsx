@@ -3,50 +3,27 @@
 import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AuthForm } from "./auth-form";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { User, LogOut } from "@/components/ui/icons";
 import Link from "next/link";
 import { getUserProfile } from "@/lib/utils/supabase/user";
 import { signOut } from "@/app/auth/actions";
 
 export function UserButton() {
-  const supabase = getSupabaseBrowserClient()
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const { user } = useAuth()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const profile = await getUserProfile(user);
+    if (user) {
+      getUserProfile(user).then(profile => {
         setAvatarUrl(profile?.image || user.user_metadata.picture || null);
-      }
-    };
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          getUserProfile(currentUser).then(profile => {
-            setAvatarUrl(profile?.image || currentUser.user_metadata.picture || null);
-          });
-        } else {
-          setAvatarUrl(null);
-        }
-      }
-    );
-
-    fetchUserAndProfile();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [supabase.auth]);
+      });
+    } else {
+      setAvatarUrl(null);
+    }
+  }, [user]);
 
   if (user) {
     return (

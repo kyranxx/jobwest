@@ -1,38 +1,28 @@
-import { getSupabaseServerClient } from '@/lib/utils/supabase/server';
-import MyAdsClient from './my-ads-client';
+"use client"
 
-type Job = {
-  id: string;
-  title: string;
-  location: string;
-  created_at: string;
-};
+import { useJobs } from '@/hooks/use-jobs';
+import MyAdsList from './my-ads-list';
+import MyAdsSkeleton from './my-ads-skeleton';
+import { memo } from 'react';
 
-export default async function MyAds() {
-  const supabase = getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+function MyAds() {
+  const { jobs, loading, error } = useJobs();
 
-  let jobs: Job[] = [];
-  let error: string | null = null;
-
-  if (user) {
-    const { data, error: fetchError } = await supabase
-      .from('jobs')
-      .select('id, title, location, created_at')
-      .eq('user_id', user.id);
-
-    if (fetchError) {
-      error = fetchError.message;
-    } else {
-      jobs = data as Job[];
-    }
+  if (loading) {
+    return <MyAdsSkeleton />;
   }
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Moje inzeráty</h1>
-      {error && <p>Chyba pri načítaní inzerátov: {error}</p>}
-      {!error && <MyAdsClient initialJobs={jobs} user={user} />}
+      {error && (
+        <div className="text-red-500 mb-4">
+          Chyba pri načítaní inzerátov: {error}
+        </div>
+      )}
+      {!error && <MyAdsList jobs={jobs} />}
     </div>
   );
 }
+
+export default memo(MyAds);

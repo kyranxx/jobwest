@@ -14,6 +14,12 @@ FOR UPDATE
 USING ((select auth.uid()) = id)
 WITH CHECK ((select auth.uid()) = id);
 
+-- Create a policy to allow users to insert their own profile
+CREATE POLICY "Allow individual user insert access"
+ON public.users
+FOR INSERT
+WITH CHECK ((select auth.uid()) = id);
+
 -- Enable RLS on the jobs table
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 

@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -110,9 +108,14 @@ export default function AddAd() {
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Názov</FormLabel>
+                <FormLabel htmlFor="title">Názov</FormLabel>
                 <FormControl>
-                  <Input placeholder="Názov inzerátu" {...field} />
+                  <Input
+                    placeholder="Názov inzerátu"
+                    {...field}
+                    id="title"
+                    name="title"
+                  />
                 </FormControl>
                 <FormDescription>Zadajte názov vášho inzerátu.</FormDescription>
                 <FormMessage />
@@ -124,12 +127,14 @@ export default function AddAd() {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Popis</FormLabel>
+                <FormLabel htmlFor="description">Popis</FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Popis inzerátu"
                     className="resize-none"
                     {...field}
+                    id="description"
+                    name="description"
                   />
                 </FormControl>
                 <FormDescription>
@@ -144,13 +149,14 @@ export default function AddAd() {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Kategória</FormLabel>
+                <FormLabel htmlFor="category">Kategória</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  name="category"
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger id="category">
                       <SelectValue placeholder="Vyberte kategóriu" />
                     </SelectTrigger>
                   </FormControl>
@@ -174,13 +180,14 @@ export default function AddAd() {
             name="country_code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Krajina</FormLabel>
+                <FormLabel htmlFor="country_code">Krajina</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  name="country_code"
                 >
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger id="country_code">
                       <SelectValue placeholder="Vyberte krajinu" />
                     </SelectTrigger>
                   </FormControl>
@@ -204,9 +211,15 @@ export default function AddAd() {
             name="salary"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Plat (€/mesiac)</FormLabel>
+                <FormLabel htmlFor="salary">Plat (€/mesiac)</FormLabel>
                 <FormControl>
-                  <Input type="text" placeholder="Napr. 1500" {...field} />
+                  <Input
+                    type="text"
+                    placeholder="Napr. 1500"
+                    {...field}
+                    id="salary"
+                    name="salary"
+                  />
                 </FormControl>
                 <FormDescription>
                   Aký je ponúkaný mesačný plat?
@@ -224,10 +237,12 @@ export default function AddAd() {
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    id="accommodation_included"
+                    name="accommodation_included"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel>
+                  <FormLabel htmlFor="accommodation_included">
                     Ubytovanie zahrnuté
                   </FormLabel>
                   <FormDescription>
@@ -246,10 +261,12 @@ export default function AddAd() {
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    id="accommodation_paid"
+                    name="accommodation_paid"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel>
+                  <FormLabel htmlFor="accommodation_paid">
                     Ubytovanie hradené
                   </FormLabel>
                   <FormDescription>

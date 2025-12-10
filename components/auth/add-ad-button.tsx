@@ -1,34 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
-import type { User } from "@supabase/supabase-js";
+import { useAuth } from "@/hooks/use-auth"
 import { Plus } from "@/components/ui/icons";
 import { AuthForm } from "./auth-form"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog"
 import Link from "next/link";
 
 export function AddAdButton() {
-  const supabase = getSupabaseBrowserClient()
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null)
-      }
-    )
-
-    // Initial check
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-    })
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [supabase.auth]);
+  const { user } = useAuth()
 
   if (user) {
     return (

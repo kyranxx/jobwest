@@ -15,28 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuth } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { memo } from "react";
 
-export default function MainDashboard() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/");
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return <div>Načítavanie...</div>;
-  }
-
-  if (!user) {
-    return null;
-  }
-
+function MainDashboard() {
   return (
     <div className="space-y-6">
       <Card>
@@ -184,3 +165,5 @@ export default function MainDashboard() {
     </div>
   );
 }
+
+export default memo(MainDashboard);

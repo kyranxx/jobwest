@@ -3,8 +3,14 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
-  // Protect dashboard routes
+
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  // Only check auth for protected routes
   if (pathname.startsWith('/ucet')) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,10 +21,38 @@ export async function middleware(request: NextRequest) {
             return request.cookies.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            // Cookie setting logic
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
           },
           remove(name: string, options: CookieOptions) {
-            // Cookie removal logic
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
           },
         },
       }
@@ -28,7 +62,7 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // If no user and trying to access dashboard, redirect to auth
+    // If no user and trying to access dashboard, redirect to home
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/'
@@ -64,7 +98,7 @@ export async function middleware(request: NextRequest) {
       upgrade-insecure-requests;
     `
   }
- 
+
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-nonce', nonce)
   requestHeaders.set(
@@ -73,11 +107,6 @@ export async function middleware(request: NextRequest) {
     cspHeader.replace(/\s{2,}/g, ' ').trim()
   )
 
-  let response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
   response.headers.set(
     'Content-Security-Policy',
     cspHeader.replace(/\s{2,}/g, ' ').trim()
