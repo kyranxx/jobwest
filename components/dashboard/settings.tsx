@@ -61,7 +61,7 @@ function PasswordSettings() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof passwordFormSchema>) {
+  function onSubmit(_values: z.infer<typeof passwordFormSchema>) {
     // TODO: Implement actual password change via Supabase
     toast.success("Heslo úspešne zmenené!");
   }
@@ -156,7 +156,7 @@ function AvatarSettings() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof avatarFormSchema>) {
+  function onSubmit(_values: z.infer<typeof avatarFormSchema>) {
     // TODO: Implement actual avatar upload to Supabase Storage
     toast.success("Avatar úspešne zmenený!");
   }
