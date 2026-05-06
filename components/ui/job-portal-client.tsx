@@ -1,21 +1,24 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import {
-  BookmarkPlus,
-  Bookmark,
-  Filter,
   ChevronDown,
+  Search,
+  X,
+  SlidersHorizontal,
+  Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import JobDetail from "@/components/ui/job-detail"
+import { JobCard } from "@/components/ui/job-card"
 import { toast } from "sonner"
 import { Job } from "@/lib/types"
 import { Filters } from "@/components/ui/filters"
 import { QuickFilters } from "@/components/ui/quick-filters"
-import { countries as countryData } from "@/lib/countries_sk"
+import { countries } from "@/lib/countries"
+import { jobTypes } from "@/lib/job-options"
+import { useJobSearch } from "@/hooks/use-job-search"
 import {
   Pagination,
   PaginationContent,
@@ -25,28 +28,44 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import React from "react"
+
 export default function JobPortalClient({
   jobs: initialJobs,
+  isDemoMode = false,
 }: {
   jobs: Job[]
+  isDemoMode?: boolean
 }) {
   const { user } = useAuth()
-  const [jobs] = useState(initialJobs)
+  const jobs = initialJobs
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [savedJobs, setSavedJobs] = useState<number[]>([])
+  const [savedJobs, setSavedJobs] = useState<Array<Job["id"]>>([])
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
-  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
-  const [isAccommodationProvided, setIsAccommodationProvided] = useState(false)
-  const [isAccommodationPaid, setIsAccommodationPaid] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const jobsPerPage = 20
   const [scrollPosition, setScrollPosition] = useState(0)
   const mainContainerRef = useRef<HTMLDivElement>(null)
   const jobGridRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [showPricingInfo, setShowPricingInfo] = useState(false)
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedCategories,
+    setSelectedCategories,
+    selectedCountries,
+    setSelectedCountries,
+    selectedJobTypes,
+    setSelectedJobTypes,
+    accommodationNotProvided,
+    setAccommodationNotProvided,
+    currentPage,
+    setCurrentPage,
+    categories,
+    filteredJobs,
+    paginatedJobs,
+    totalPages,
+    resetFilters,
+    hasActiveFilters,
+  } = useJobSearch(jobs)
 
   const handleSelectJob = useCallback((job: Job) => {
     setScrollPosition(window.scrollY)
@@ -65,74 +84,16 @@ export default function JobPortalClient({
     }
   }, [selectedJob, scrollPosition])
 
-  const categories = useMemo(() => {
-    const allCategories = initialJobs.map((job) => job.category)
-    return [...new Set(allCategories)].map((category) => ({
-      value: category,
-      label: category,
-    }))
-  }, [initialJobs])
-
-  const countries = countryData;
-
-  const jobTypes = [
-    { id: "zivnost", label: "Živnosť" },
-    { id: "na-zmluvu", label: "Na zmluvu" },
-    { id: "brigada", label: "Brigáda" },
-  ]
-
-  const filteredJobs = useMemo(() => {
-    const sortedJobs = [...jobs].sort((a, b) => {
-      if (a.isTop && !b.isTop) return -1
-      if (!a.isTop && b.isTop) return 1
-      if (a.isTop && b.isTop) {
-        return new Date(b.topped_at!).getTime() - new Date(a.topped_at!).getTime()
-      }
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    })
-
-    return sortedJobs.filter((job) => {
-      const searchMatch = job.title.toLowerCase().includes(searchTerm.toLowerCase())
-      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(job.category)
-      const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(job.country_code)
-      const jobTypeMatch = selectedJobTypes.length === 0 || selectedJobTypes.includes(job.jobType)
-      const accommodationProvidedMatch = !isAccommodationProvided || job.accommodation_provided
-      const accommodationPaidMatch = !isAccommodationPaid || job.accommodation_paid
-      return searchMatch && categoryMatch && countryMatch && jobTypeMatch && accommodationProvidedMatch && accommodationPaidMatch
-    })
-  }, [jobs, searchTerm, selectedCategories, selectedCountries, selectedJobTypes, isAccommodationProvided, isAccommodationPaid])
-
-  const paginatedJobs = useMemo(() => {
-    const startIndex = (currentPage - 1) * jobsPerPage
-    const endIndex = startIndex + jobsPerPage
-    return filteredJobs.slice(startIndex, endIndex)
-  }, [filteredJobs, currentPage, jobsPerPage])
-
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
-
-  const resetFilters = useCallback(() => {
-    setSearchTerm("")
-    setSelectedCategories([])
-    setSelectedCountries([])
-    setSelectedJobTypes([])
-    setIsAccommodationProvided(false)
-    setIsAccommodationPaid(false)
-    setCurrentPage(1)
-  }, [])
-
   const scrollToJobGrid = useCallback(() => {
-    window.scrollTo({ 
-      top: 0, 
-      behavior: 'smooth' 
-    })
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }, [])
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
     scrollToJobGrid()
-  }, [scrollToJobGrid])
+  }, [scrollToJobGrid, setCurrentPage])
 
-  const toggleSaveJob = useCallback((jobId: number) => {
+  const toggleSaveJob = useCallback((jobId: Job["id"]) => {
     if (!user) {
       toast.error("Na uloženie ponuky sa musíte prihlásiť.")
       return
@@ -146,32 +107,98 @@ export default function JobPortalClient({
     if (isSaving) {
       toast.success("Pracovná ponuka uložená")
     } else {
-      toast.info("Uloženie zrušené")
+      toast.info("Uloženie ponuky zrušené")
     }
   }, [user, savedJobs])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="max-w-screen-2xl mx-auto w-full">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="mx-auto w-full">
         <main className="flex-grow">
-          <>
-            <div className="p-4 md:hidden">
+          {/* Title + Search */}
+          <section className="border-b bg-white">
+            <div className="max-w-screen-2xl mx-auto px-3 md:px-6 py-5 md:py-7">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+                    Práca v zahraničí
+                  </h1>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {jobs.length} aktívnych ponúk
+                  </p>
+                </div>
+                <div className="relative w-full md:max-w-md">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="job-search"
+                    name="job-search"
+                    value={searchTerm}
+                    onChange={(event) => {
+                      setSearchTerm(event.target.value)
+                      setCurrentPage(1)
+                    }}
+                    placeholder="Hľadať pozíciu, firmu, krajinu..."
+                    className="h-10 w-full rounded-md border border-input bg-white pl-9 pr-10 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => { setSearchTerm(""); setCurrentPage(1) }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Pricing info */}
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowPricingInfo(!showPricingInfo)}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                  Ako funguje pridávanie inzerátov?
+                </button>
+                {showPricingInfo && (
+                  <div className="mt-2 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1 animate-fade-in">
+                    <p><span className="font-medium text-foreground">Pridanie inzerátu</span> je <span className="text-emerald-600 font-medium">zadarmo</span>.</p>
+                    <p><span className="font-medium text-foreground">TOP zvýraznenie</span> — platené. Inzerát sa zobrazuje na vyššej pozícii.</p>
+                    <p><span className="font-medium text-foreground">Exclusive zvýraznenie</span> — platené. Inzerát sa zobrazuje na najvyššej pozícii so zvýrazneným rámikom.</p>
+                  </div>
+                )}
+              </div>
+
+              {isDemoMode && (
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Zobrazujem demo ponuky, pretože databáza nevrátila žiadne inzeráty.
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Filters + Content */}
+          <div className="max-w-screen-2xl mx-auto px-3 md:px-6 py-4 md:py-6">
+            {/* Mobile Filter Toggle */}
+            <div className="md:hidden mb-3">
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full justify-between h-10 text-sm"
                 onClick={() => setShowFilters(!showFilters)}
               >
-                <Filter className="mr-2 h-4 w-4" />
-                Filtrovať
-                <ChevronDown
-                  className={`ml-2 h-4 w-4 transition-transform ${
-                    showFilters ? "rotate-180" : ""
-                  }`}
-                />
+                <span className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filtrovať
+                  {hasActiveFilters && (
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
               </Button>
             </div>
+
             {showFilters && (
-              <div className="p-4 md:hidden">
+              <div className="md:hidden mb-4 p-4 rounded-lg border bg-card animate-fade-in">
                 <QuickFilters
                   selectedCategories={selectedCategories}
                   setSelectedCategories={setSelectedCategories}
@@ -182,22 +209,20 @@ export default function JobPortalClient({
                   selectedJobTypes={selectedJobTypes}
                   setSelectedJobTypes={setSelectedJobTypes}
                   jobTypes={jobTypes}
-                  isAccommodationProvided={isAccommodationProvided}
-                  setIsAccommodationProvided={setIsAccommodationProvided}
-                  isAccommodationPaid={isAccommodationPaid}
-                  setIsAccommodationPaid={setIsAccommodationPaid}
+                  accommodationNotProvided={accommodationNotProvided}
+                  setAccommodationNotProvided={setAccommodationNotProvided}
                   resetFilters={resetFilters}
                 />
                 <Button
-                  variant="outline"
-                  className="w-full mt-4 bg-black text-white"
+                  className="w-full mt-3"
                   onClick={() => setShowFilters(false)}
                 >
-                  Zobraziť výsledky
+                  Zobraziť výsledky ({filteredJobs.length})
                 </Button>
               </div>
             )}
-            <div className="flex">
+
+            <div className="flex gap-6">
               <Filters
                 selectedCategories={selectedCategories}
                 setSelectedCategories={setSelectedCategories}
@@ -208,91 +233,86 @@ export default function JobPortalClient({
                 selectedJobTypes={selectedJobTypes}
                 setSelectedJobTypes={setSelectedJobTypes}
                 jobTypes={jobTypes}
-                isAccommodationProvided={isAccommodationProvided}
-                setIsAccommodationProvided={setIsAccommodationProvided}
-                isAccommodationPaid={isAccommodationPaid}
-                setIsAccommodationPaid={setIsAccommodationPaid}
+                accommodationNotProvided={accommodationNotProvided}
+                setAccommodationNotProvided={setAccommodationNotProvided}
                 resetFilters={resetFilters}
                 filteredJobsCount={filteredJobs.length}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
               />
-              <div className="flex-1" ref={mainContainerRef}>
+
+              <div className="flex-1 min-w-0" ref={mainContainerRef}>
                 {selectedJob ? (
-                  <div className="p-4">
+                  <div>
                     <JobDetail job={selectedJob} onBack={handleBack} />
                   </div>
                 ) : (
-                  <div className="p-4">
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">{filteredJobs.length}</span>{" "}
+                        {filteredJobs.length === 1 ? "ponuka" : filteredJobs.length >= 2 && filteredJobs.length <= 4 ? "ponuky" : "ponúk"}
+                        {hasActiveFilters && (
+                          <button onClick={resetFilters} className="text-primary hover:underline text-xs ml-1.5">
+                            (zrušiť filtre)
+                          </button>
+                        )}
+                      </p>
+                      <div className="flex items-center gap-1 md:hidden">
+                        <Button
+                          variant={viewMode === "grid" ? "default" : "outline"}
+                          size="icon"
+                          className="h-7 w-7 rounded"
+                          onClick={() => setViewMode("grid")}
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant={viewMode === "list" ? "default" : "outline"}
+                          size="icon"
+                          className="h-7 w-7 rounded"
+                          onClick={() => setViewMode("list")}
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="4" width="18" height="4" rx="1" /><rect x="3" y="10" width="18" height="4" rx="1" /><rect x="3" y="16" width="18" height="4" rx="1" />
+                          </svg>
+                        </Button>
+                      </div>
+                    </div>
+
                     <div
                       ref={jobGridRef}
-                      className={
-                        viewMode === "grid"
-                          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                          : "flex flex-col gap-4"
-                      }
+                      className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4" : "flex flex-col gap-2.5"}
                     >
                       {paginatedJobs.map((job) => (
-                        <div
+                        <JobCard
                           key={job.id}
-                          className="bg-white p-4 rounded-lg border cursor-pointer hover:shadow-md transition-shadow relative flex flex-col h-full overflow-hidden"
-                          onClick={() => handleSelectJob(job)}
-                        >
-                          {job.isTop && (
-                            <div className="absolute top-0 left-0 w-0 h-0 border-t-[35px] border-t-blue-600 border-r-[35px] border-r-transparent">
-                              <span className="absolute -top-[28px] left-[6px] text-white text-[9px] font-bold transform -rotate-45">
-                                TOP
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-start">
-                            <h3 className="text-lg font-bold pr-8">
-                              {job.title}
-                            </h3>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleSaveJob(job.id)
-                              }}
-                              className="absolute top-2 right-2 bg-gray-100 hover:bg-gray-200 rounded-md"
-                            >
-                              {savedJobs.includes(job.id) ? (
-                                <Bookmark className="h-6 w-6 fill-blue-700 text-blue-700" />
-                              ) : (
-                                <BookmarkPlus className="h-6 w-6 text-blue-700" />
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-2">
-                            {job.company}
-                          </p>
-                          <div className="flex-grow mt-2">
-                            <p className="text-sm text-gray-600">
-                              {job.description.substring(0, 200)}
-                              {job.description.length > 200 ? "..." : ""}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
-                            <div
-                              className={`flag flag-${job.country_code?.toLowerCase()}`}
-                            />
-                            <span>{job.country?.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="secondary">{job.jobType}</Badge>
-                            <Badge variant="secondary">{job.salary}</Badge>
-                            <Badge variant="secondary">{job.category}</Badge>
-                          </div>
-                          <div className="flex justify-between items-center mt-auto pt-4">
-                            <p className="text-xs text-gray-400">
-                              {new Date(job.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
+                          job={job}
+                          isSaved={savedJobs.includes(job.id)}
+                          onSelect={handleSelectJob}
+                          onToggleSave={toggleSaveJob}
+                        />
                       ))}
                     </div>
+
+                    {filteredJobs.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                          <Search className="h-6 w-6 text-muted-foreground/40" />
+                        </div>
+                        <h2 className="text-base font-semibold mb-1">Žiadne ponuky</h2>
+                        <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                          Nenašli sme žiadne ponuky zodpovedajúce vašim filtrom. Skúste upraviť vyhľadávanie alebo resetujte filtre.
+                        </p>
+                        <Button onClick={resetFilters} variant="outline" size="sm">
+                          <X className="mr-1.5 h-3.5 w-3.5" />
+                          Resetovať filtre
+                        </Button>
+                      </div>
+                    )}
+
                     {totalPages > 1 && (
                       <div className="mt-8 flex justify-center">
                         <Pagination>
@@ -303,9 +323,7 @@ export default function JobPortalClient({
                                 onClick={(e) => {
                                   e.preventDefault()
                                   const newPage = Math.max(currentPage - 1, 1)
-                                  if (newPage !== currentPage) {
-                                    handlePageChange(newPage)
-                                  }
+                                  if (newPage !== currentPage) handlePageChange(newPage)
                                 }}
                               >
                                 Predchádzajúce
@@ -316,10 +334,7 @@ export default function JobPortalClient({
                                 <PaginationLink
                                   href="#"
                                   isActive={currentPage === i + 1}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    handlePageChange(i + 1)
-                                  }}
+                                  onClick={(e) => { e.preventDefault(); handlePageChange(i + 1) }}
                                 >
                                   {i + 1}
                                 </PaginationLink>
@@ -331,9 +346,7 @@ export default function JobPortalClient({
                                 onClick={(e) => {
                                   e.preventDefault()
                                   const newPage = Math.min(currentPage + 1, totalPages)
-                                  if (newPage !== currentPage) {
-                                    handlePageChange(newPage)
-                                  }
+                                  if (newPage !== currentPage) handlePageChange(newPage)
                                 }}
                               >
                                 Ďalšie
@@ -343,69 +356,13 @@ export default function JobPortalClient({
                         </Pagination>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
             </div>
-          </>
+          </div>
         </main>
       </div>
-      <footer className="bg-black text-white py-8 px-4 mt-8">
-        <div className="max-w-screen-2xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-lg font-medium mb-4">O JobWest</h3>
-              <p className="text-gray-400 text-sm">
-                JobWest je portál pracovných ponúk zameraný na prácu v zahraničí. Ponúkame pracovné príležitosti v
-                krajinách západnej Európy a USA.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium mb-4">Rýchle odkazy</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Domov
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Hľadať prácu
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Pre zamestnávateľov
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Kontakt
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Podmienky používania
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium mb-4">Kontakt</h3>
-              <address className="not-italic text-sm text-gray-400">
-                <p>JobWest s.r.o.</p>
-                <p>Hlavná 123</p>
-                <p>811 01 Bratislava</p>
-                <p className="mt-2">info@jobwest.eu</p>
-                <p>+421 900 123 456</p>
-              </address>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
-            <p>© 2025 JobWest. Všetky práva vyhradené.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

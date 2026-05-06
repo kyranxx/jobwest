@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { Plus } from "@/components/ui/icons";
 import { AuthForm } from "./auth-form"
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog"
+import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog"
 import Link from "next/link";
 
 export function AddAdButton() {
@@ -16,10 +16,10 @@ export function AddAdButton() {
         <Button
           variant="default"
           size="icon"
-          className="rounded-md h-10 w-10 bg-black hover:bg-dark-gray-800"
+          className="h-8 w-8"
           title="Pridať inzerát"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           <span className="sr-only">Pridať inzerát</span>
         </Button>
       </Link>
@@ -32,20 +32,14 @@ export function AddAdButton() {
         <Button
           variant="default"
           size="icon"
-          className="rounded-md h-10 w-10 bg-black hover:bg-dark-gray-800"
+          className="h-8 w-8"
           title="Pridať inzerát"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           <span className="sr-only">Pridať inzerát</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Prihlásenie</DialogTitle>
-          <DialogDescription>
-            Pre pridanie inzerátu sa musíte prihlásiť.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[420px] p-0 gap-0 mx-4 sm:mx-0 max-h-[95vh] overflow-y-auto">
         <AuthForm />
       </DialogContent>
     </Dialog>

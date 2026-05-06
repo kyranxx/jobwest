@@ -64,37 +64,97 @@ export type Database = {
       }
       jobs: {
         Row: {
+          accommodation_included: boolean | null
+          accommodation_paid: boolean | null
+          accommodation_provided: boolean | null
           category: string
+          company: string | null
           country_code: string
           created_at: string | null
           description: string | null
+          highlight_tier: string | null
           id: number
           is_top: boolean
           job_type: string
+          location: string | null
           salary: string
+          topped_at: string | null
           title: string
+          user_id: string | null
         }
         Insert: {
+          accommodation_included?: boolean | null
+          accommodation_paid?: boolean | null
+          accommodation_provided?: boolean | null
           category: string
+          company?: string | null
           country_code: string
           created_at?: string | null
           description?: string | null
+          highlight_tier?: string | null
           id?: never
           is_top: boolean
           job_type: string
+          location?: string | null
           salary: string
+          topped_at?: string | null
           title: string
+          user_id?: string | null
         }
         Update: {
+          accommodation_included?: boolean | null
+          accommodation_paid?: boolean | null
+          accommodation_provided?: boolean | null
           category?: string
+          company?: string | null
           country_code?: string
           created_at?: string | null
           description?: string | null
+          highlight_tier?: string | null
           id?: never
           is_top?: boolean
           job_type?: string
+          location?: string | null
           salary?: string
+          topped_at?: string | null
           title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          job_id: number | null
+          status: string
+          stripe_session_id: string | null
+          tier: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          job_id?: number | null
+          status?: string
+          stripe_session_id?: string | null
+          tier: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          job_id?: number | null
+          status?: string
+          stripe_session_id?: string | null
+          tier?: string
+          user_id?: string | null
         }
         Relationships: []
       }

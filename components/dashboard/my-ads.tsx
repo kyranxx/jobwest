@@ -6,7 +6,7 @@ import MyAdsSkeleton from './my-ads-skeleton';
 import { memo } from 'react';
 
 function MyAds() {
-  const { jobs, loading, error } = useJobs();
+  const { jobs, loading, error, invalidateCache } = useJobs();
 
   if (loading) {
     return <MyAdsSkeleton />;
@@ -14,13 +14,13 @@ function MyAds() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Moje inzeráty</h1>
+      <h1 className="text-xl font-bold mb-4">Moje inzeráty</h1>
       {error && (
-        <div className="text-red-500 mb-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 mb-4">
           Chyba pri načítaní inzerátov: {error}
         </div>
       )}
-      {!error && <MyAdsList jobs={jobs} />}
+      <MyAdsList jobs={jobs} onInvalidateJobs={invalidateCache} />
     </div>
   );
 }

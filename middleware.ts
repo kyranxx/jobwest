@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
   let cspHeader = `
     script-src 'self' https://accounts.google.com 'nonce-${nonce}' 'strict-dynamic';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: lh3.googleusercontent.com iuzmhwjdlywbhtgzuyib.supabase.co;
+    img-src 'self' blob: data: lh3.googleusercontent.com uaphhpgvvbwwaicjmwdp.supabase.co;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
       script-src 'self' https://accounts.google.com https://www.google.com https://www.gstatic.com 'unsafe-inline' 'unsafe-eval';
       style-src 'self' https://accounts.google.com 'unsafe-inline';
       frame-src 'self' https://accounts.google.com https://www.google.com;
-      img-src 'self' blob: data: lh3.googleusercontent.com iuzmhwjdlywbhtgzuyib.supabase.co;
+      img-src 'self' blob: data: lh3.googleusercontent.com uaphhpgvvbwwaicjmwdp.supabase.co;
       font-src 'self';
       object-src 'none';
       base-uri 'self';
@@ -98,14 +98,6 @@ export async function middleware(request: NextRequest) {
       upgrade-insecure-requests;
     `
   }
-
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-nonce', nonce)
-  requestHeaders.set(
-    'Content-Security-Policy',
-    // Replace newline characters and spaces
-    cspHeader.replace(/\s{2,}/g, ' ').trim()
-  )
 
   response.headers.set(
     'Content-Security-Policy',

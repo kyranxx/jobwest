@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      // PGRST116 means no rows found, which is what we want
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // PGRST116 means no rows found. Other Supabase errors should not break
+      // local/demo registration checks while the database is being finished.
+      console.error("Email check failed:", error.message);
+      return NextResponse.json({ exists: false, degraded: true });
     }
 
     return NextResponse.json({ exists: !!data });
@@ -28,6 +30,7 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
-    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+    console.error("Email check failed:", error);
+    return NextResponse.json({ exists: false, degraded: true });
   }
 }

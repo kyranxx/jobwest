@@ -1,5 +1,7 @@
+export type HighlightTier = "standard" | "top" | "exclusive"
+
 export type Job = {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   location: string;
@@ -9,7 +11,6 @@ export type Job = {
   salary_range: string;
   tags: string[];
   applications: number;
-  // Properties for list view from page.tsx
   country_code: string;
   country?: {
     code: string;
@@ -19,9 +20,18 @@ export type Job = {
   jobType: string;
   salary: string;
   isTop: boolean;
+  highlightTier?: HighlightTier;
   topped_at: string | null;
   accommodation_provided: boolean;
   accommodation_paid: boolean;
   companyName?: string;
   contactInfo?: string;
 };
+
+export type JobSummary = Pick<Job, "id" | "title" | "location" | "created_at">
+
+export function getHighlightTier(job: { highlightTier?: HighlightTier; isTop?: boolean }): HighlightTier {
+  if (job.highlightTier === "exclusive") return "exclusive"
+  if (job.highlightTier === "top" || job.isTop) return "top"
+  return "standard"
+}

@@ -3,29 +3,23 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { useAuth } from "./use-auth"
-
-type Job = {
-  id: string;
-  title: string;
-  location: string;
-  created_at: string;
-}
+import type { JobSummary } from "@/lib/types"
 
 type JobsState = {
-  jobs: Job[]
+  jobs: JobSummary[]
   loading: boolean
   error: string | null
 }
 
-// Cache for jobs data
-let cachedJobs: Job[] | null = null
+const JOBS_CACHE_DURATION = 5 * 60 * 1000
+let cachedJobs: JobSummary[] | null = null
 let lastJobsFetch = 0
-const JOBS_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export function useJobs() {
   const { user } = useAuth()
+
   const [state, setState] = useState<JobsState>({
-    jobs: cachedJobs || [],
+    jobs: cachedJobs ?? [],
     loading: !cachedJobs,
     error: null
   })
@@ -38,7 +32,6 @@ export function useJobs() {
       return
     }
 
-    // Use cached data if available and recent
     if (!force && cachedJobs && Date.now() - lastJobsFetch < JOBS_CACHE_DURATION) {
       setState({ jobs: cachedJobs, loading: false, error: null })
       return
@@ -60,12 +53,14 @@ export function useJobs() {
         return
       }
 
-      const jobs = data as Job[]
-      
-      // Update cache
+      const jobs: JobSummary[] = (data ?? []).map((job) => ({
+        id: job.id,
+        title: job.title,
+        location: job.location ?? "",
+        created_at: job.created_at ?? new Date().toISOString(),
+      }))
       cachedJobs = jobs
       lastJobsFetch = Date.now()
-      
       setState({ jobs, loading: false, error: null })
     } catch (err) {
       if (!mounted.current) return

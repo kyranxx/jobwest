@@ -7,18 +7,16 @@ import { LayoutGrid, Rows3 } from "@/components/ui/icons"
 
 interface FiltersProps {
   selectedCategories: string[]
-  setSelectedCategories: (categories: string[]) => void
+  setSelectedCategories: (categories: string[] | ((prev: string[]) => string[])) => void
   categories: { value: string; label: string }[]
   selectedCountries: string[]
-  setSelectedCountries: (countries: string[]) => void
+  setSelectedCountries: (countries: string[] | ((prev: string[]) => string[])) => void
   countries: { code: string; name: string; flag: string }[]
   selectedJobTypes: string[]
-  setSelectedJobTypes: (jobTypes: string[]) => void
-  jobTypes: { id: string; label: string }[]
-  isAccommodationProvided: boolean
-  setIsAccommodationProvided: (isProvided: boolean) => void
-  isAccommodationPaid: boolean
-  setIsAccommodationPaid: (isPaid: boolean) => void
+  setSelectedJobTypes: (jobTypes: string[] | ((prev: string[]) => string[])) => void
+  jobTypes: readonly { id: string; label: string }[]
+  accommodationNotProvided: boolean
+  setAccommodationNotProvided: (v: boolean) => void
   resetFilters: () => void
   filteredJobsCount: number
   viewMode: "grid" | "list"
@@ -38,25 +36,34 @@ export function Filters({
   }
 
   return (
-    <div className="hidden md:block w-64 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-md font-semibold">
-          {filteredJobsCount} {getOfferText(filteredJobsCount)}
-        </h3>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-          className="bg-black text-white hover:bg-gray-800"
-        >
-          {viewMode === "grid" ? (
-            <Rows3 className="h-5 w-5" />
-          ) : (
-            <LayoutGrid className="h-5 w-5" />
-          )}
-        </Button>
+    <div className="hidden md:block w-64 shrink-0">
+      <div className="sticky top-20 rounded-lg border bg-card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <span className="text-lg font-bold text-foreground">{filteredJobsCount}</span>
+            <span className="text-xs text-muted-foreground ml-1">{getOfferText(filteredJobsCount)}</span>
+          </div>
+          <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="icon"
+              className="h-7 w-7 rounded-sm"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="icon"
+              className="h-7 w-7 rounded-sm"
+              onClick={() => setViewMode("list")}
+            >
+              <Rows3 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+        <QuickFilters {...props} />
       </div>
-      <QuickFilters {...props} />
     </div>
   )
 }

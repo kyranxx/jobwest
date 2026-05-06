@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -16,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif"];
@@ -52,6 +54,9 @@ const avatarFormSchema = z.object({
 
 function PasswordSettings() {
   const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = getSupabaseBrowserClient();
+
   const form = useForm<z.infer<typeof passwordFormSchema>>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
@@ -61,9 +66,23 @@ function PasswordSettings() {
     },
   });
 
-  function onSubmit(_values: z.infer<typeof passwordFormSchema>) {
-    // TODO: Implement actual password change via Supabase
-    toast.success("Heslo úspešne zmenené!");
+  async function onSubmit(values: z.infer<typeof passwordFormSchema>) {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: values.newPassword,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Heslo úspešne zmenené!");
+        form.reset();
+      }
+    } catch {
+      toast.error("Nepodarilo sa zmeniť heslo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -141,7 +160,7 @@ function PasswordSettings() {
               </FormItem>
             )}
           />
-          <Button type="submit">Zmeniť heslo</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Ukladám..." : "Zmeniť heslo"}</Button>
         </form>
       </Form>
     </div>
@@ -149,6 +168,10 @@ function PasswordSettings() {
 }
 
 function AvatarSettings() {
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = getSupabaseBrowserClient();
+
   const form = useForm<z.infer<typeof avatarFormSchema>>({
     resolver: zodResolver(avatarFormSchema),
     defaultValues: {
@@ -156,9 +179,45 @@ function AvatarSettings() {
     },
   });
 
-  function onSubmit(_values: z.infer<typeof avatarFormSchema>) {
-    // TODO: Implement actual avatar upload to Supabase Storage
-    toast.success("Avatar úspešne zmenený!");
+  async function onSubmit(values: z.infer<typeof avatarFormSchema>) {
+    if (!user) {
+      toast.error("Musíte byť prihlásený.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const file = values.avatar[0] as File;
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        toast.error(uploadError.message);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: urlData.publicUrl },
+      });
+
+      if (updateError) {
+        toast.error(updateError.message);
+      } else {
+        toast.success("Avatar úspešne zmenený!");
+        form.reset();
+      }
+    } catch {
+      toast.error("Nepodarilo sa nahrať avatar.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -188,7 +247,7 @@ function AvatarSettings() {
               </FormItem>
             )}
           />
-          <Button type="submit">Zmeniť avatar</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Nahrávam..." : "Zmeniť avatar"}</Button>
         </form>
       </Form>
     </div>

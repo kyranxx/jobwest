@@ -1,8 +1,5 @@
-import { fileURLToPath } from 'url';
 import "./lib/env.mjs";
 import bundleAnalyzer from '@next/bundle-analyzer';
-
-const __filename = fileURLToPath(import.meta.url);
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -10,16 +7,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
-    config.cache = {
-      type: 'filesystem',
-      buildDependencies: {
-        config: [__filename],
-      },
-      compression: 'brotli',
-    };
-    return config;
-  },
   eslint: {
     ignoreDuringBuilds: false,
   },
@@ -34,7 +21,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'iuzmhwjdlywbhtgzuyib.supabase.co',
+        hostname: 'uaphhpgvvbwwaicjmwdp.supabase.co',
       },
     ],
   },

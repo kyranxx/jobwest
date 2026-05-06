@@ -13,15 +13,14 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Cache auth state to avoid redundant API calls
-let cachedUser: SupabaseUser | null = null
-let cachedSession: Session | null = null
-let lastCheck = 0
-const CACHE_DURATION = 30 * 1000 // 30 seconds
+const CACHE_DURATION = 30 * 1000
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SupabaseUser | null>(cachedUser)
-  const [loading, setLoading] = useState(!cachedUser)
+  const cachedUserRef = useRef<SupabaseUser | null>(null)
+  const cachedSessionRef = useRef<Session | null>(null)
+  const lastCheckRef = useRef(0)
+  const [user, setUser] = useState<SupabaseUser | null>(cachedUserRef.current)
+  const [loading, setLoading] = useState(!cachedUserRef.current)
   const supabase = getSupabaseBrowserClient()
   const mounted = useRef(true)
   const initialized = useRef(false)
@@ -29,18 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback((newUser: SupabaseUser | null, session: Session | null = null) => {
     if (!mounted.current) return
     
-    cachedUser = newUser
-    cachedSession = session
-    lastCheck = Date.now()
+    cachedUserRef.current = newUser
+    cachedSessionRef.current = session
+    lastCheckRef.current = Date.now()
     setUser(newUser)
     setLoading(false)
   }, [])
 
   const checkUser = useCallback(async (force = false) => {
-    if (!force && cachedUser && Date.now() - lastCheck < CACHE_DURATION) {
-      // Use cached data if available and recent
+    if (!force && cachedUserRef.current && Date.now() - lastCheckRef.current < CACHE_DURATION) {
       if (!mounted.current) return
-      setUser(cachedUser)
+      setUser(cachedUserRef.current)
       setLoading(false)
       return
     }
@@ -48,7 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error) {
-        console.error("Auth check error:", error)
+        const isMissingSession =
+          error.name === "AuthSessionMissingError" ||
+          error.message.toLowerCase().includes("auth session missing")
+
+        if (!isMissingSession) {
+          console.error("Auth check error:", error)
+        }
         updateUser(null)
         return
       }
@@ -76,9 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Clear cache on sign out
         if (event === 'SIGNED_OUT') {
-          cachedUser = null
-          cachedSession = null
-          lastCheck = 0
+          cachedUserRef.current = null
+          cachedSessionRef.current = null
+          lastCheckRef.current = 0
         }
       }
     )
@@ -102,9 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Error signing out:", error)
       }
       // Clear cache
-      cachedUser = null
-      cachedSession = null
-      lastCheck = 0
+      cachedUserRef.current = null
+      cachedSessionRef.current = null
+      lastCheckRef.current = 0
       updateUser(null)
     } catch (error) {
       console.error("Sign out failed:", error)
