@@ -8,7 +8,7 @@ export default function GlobalError({
   error: Error & { digest?: string }
 }) {
   return (
-    <html>
+    <html lang="sk">
       <body>
         {/* `NextError` is the default Next.js error page component. Its type
         definition requires a `statusCode` prop. However, since the App Router

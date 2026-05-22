@@ -6,10 +6,12 @@ import Image from "next/image"
 
 import { cn } from "@/lib/utils"
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
+type AvatarProps = React.ComponentPropsWithRef<typeof AvatarPrimitive.Root>
+type AvatarImageProps = React.ComponentPropsWithRef<typeof Image>
+type AvatarFallbackProps = React.ComponentPropsWithRef<typeof AvatarPrimitive.Fallback>
+
+function Avatar({ className, ref, ...props }: AvatarProps) {
+  return (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
@@ -18,13 +20,12 @@ const Avatar = React.forwardRef<
     )}
     {...props}
   />
-))
+  )
+}
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
-const AvatarImage = React.forwardRef<
-  React.ElementRef<typeof Image>,
-  React.ComponentPropsWithoutRef<typeof Image>
->(({ className, alt = "", ...props }, ref) => (
+function AvatarImage({ className, alt = "", ref, ...props }: AvatarImageProps) {
+  return (
   <Image
     ref={ref}
     className={cn("aspect-square h-full w-full", className)}
@@ -33,13 +34,12 @@ const AvatarImage = React.forwardRef<
     alt={alt}
     {...props}
   />
-))
+  )
+}
 AvatarImage.displayName = "AvatarImage"
 
-const AvatarFallback = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
+function AvatarFallback({ className, ref, ...props }: AvatarFallbackProps) {
+  return (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
@@ -48,7 +48,8 @@ const AvatarFallback = React.forwardRef<
     )}
     {...props}
   />
-))
+  )
+}
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 export { Avatar, AvatarImage, AvatarFallback }

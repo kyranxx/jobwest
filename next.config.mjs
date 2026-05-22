@@ -5,6 +5,8 @@ const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
+const supabaseImageHostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -21,7 +23,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'uaphhpgvvbwwaicjmwdp.supabase.co',
+        hostname: supabaseImageHostname,
       },
     ],
   },

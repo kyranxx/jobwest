@@ -1,4 +1,5 @@
 export type HighlightTier = "standard" | "top" | "exclusive"
+export type SalaryBasis = "gross" | "net" | "unspecified"
 
 export type Job = {
   id: number | string;
@@ -19,6 +20,8 @@ export type Job = {
   category: string;
   jobType: string;
   salary: string;
+  salaryBasis?: SalaryBasis;
+  languageRequirements?: string[];
   isTop: boolean;
   highlightTier?: HighlightTier;
   topped_at: string | null;

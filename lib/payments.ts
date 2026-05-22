@@ -1,15 +1,15 @@
 export const paymentTiers = {
   top: {
     name: "JobWest Top zvýraznenie",
-    amount: 199,
-    label: "Top 1,99 EUR",
-    description: "Top pozícia pre pracovný inzerát.",
+    amount: 990,
+    label: "TOP 9,90 EUR",
+    description: "Vyššia pozícia v zozname ponúk.",
   },
   exclusive: {
     name: "JobWest Exclusive zvýraznenie",
-    amount: 499,
-    label: "Exclusive 4,99 EUR",
-    description: "Najvyššie zvýraznenie pracovného inzerátu.",
+    amount: 1990,
+    label: "Exclusive 19,90 EUR",
+    description: "Najvyššia viditeľnosť a výraznejšie označenie.",
   },
   "add-ad": {
     name: "JobWest pridanie inzerátu",
@@ -20,4 +20,34 @@ export const paymentTiers = {
 } as const
 
 export type PaymentTier = keyof typeof paymentTiers
-export type HighlightCheckoutTier = Exclude<PaymentTier, "add-ad">
+
+const placeholderStripeValues = new Set([
+  "sk_test_your_key",
+  "sk_test_your_key_here",
+  "sk_live_your_key",
+  "sk_live_your_key_here",
+  "whsec_your_webhook_secret",
+  "whsec_your_webhook_secret_here",
+])
+
+export function isConfiguredSecret(value: string | undefined): value is string {
+  const trimmedValue = value?.trim()
+
+  return !!trimmedValue && !placeholderStripeValues.has(trimmedValue)
+}
+
+export function isLiveStripeSecretForSite(value: string | undefined, siteUrl: string): value is string {
+  if (!isConfiguredSecret(value)) return false
+
+  try {
+    const { hostname } = new URL(siteUrl)
+
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return true
+    }
+  } catch {
+    return false
+  }
+
+  return value.trim().startsWith("sk_live_")
+}

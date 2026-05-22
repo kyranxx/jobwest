@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useState } from "react"
-import { MultiSelect } from "@/components/ui/multi-select"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { RotateCcw, ChevronDown, Check } from "lucide-react"
 import { europeanCountryCodes } from "@/lib/job-options"
+import type { HighlightTier } from "@/lib/types"
 
 interface QuickFiltersProps {
   selectedCategories: string[]
@@ -17,9 +17,22 @@ interface QuickFiltersProps {
   selectedJobTypes: string[]
   setSelectedJobTypes: (jobTypes: string[] | ((prev: string[]) => string[])) => void
   jobTypes: readonly { id: string; label: string }[]
-  accommodationNotProvided: boolean
-  setAccommodationNotProvided: (v: boolean) => void
+  selectedLanguages: string[]
+  setSelectedLanguages: (languages: string[] | ((prev: string[]) => string[])) => void
+  languageOptions: readonly { id: string; label: string }[]
+  selectedHighlightTiers: HighlightTier[]
+  setSelectedHighlightTiers: (tiers: HighlightTier[] | ((prev: HighlightTier[]) => HighlightTier[])) => void
+  highlightOptions: readonly { id: HighlightTier; label: string }[]
+  accommodationProvided: boolean
+  setAccommodationProvided: (v: boolean) => void
+  minSalary: string
+  setMinSalary: (value: string) => void
+  salaryCurrency: string
+  setSalaryCurrency: (value: string) => void
+  salaryCurrencies: readonly { id: string; label: string }[]
   resetFilters: () => void
+  idPrefix?: string
+  onFilterCommit?: (message: string) => void
 }
 
 type CountryOptionProps = {
@@ -30,15 +43,16 @@ type CountryOptionProps = {
 
 function CountryOption({ country, selected, onToggle }: CountryOptionProps) {
   return (
-    <label
+    <button
+      type="button"
       onClick={() => onToggle(country.code)}
-      className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-sm hover:bg-muted/50 transition-colors ${selected ? 'bg-primary/5 text-primary font-medium' : 'text-foreground'}`}
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50 ${selected ? 'bg-primary/5 text-primary font-medium' : 'text-foreground'}`}
     >
-      <div className={`h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-        {selected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+      <div className={`size-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+        {selected && <Check className="size-2.5 text-white" strokeWidth={3} />}
       </div>
       <span className="truncate">{country.name}</span>
-    </label>
+    </button>
   )
 }
 
@@ -52,58 +66,99 @@ export function QuickFilters({
   selectedJobTypes,
   setSelectedJobTypes,
   jobTypes,
-  accommodationNotProvided,
-  setAccommodationNotProvided,
+  selectedLanguages,
+  setSelectedLanguages,
+  languageOptions,
+  selectedHighlightTiers,
+  setSelectedHighlightTiers,
+  highlightOptions,
+  accommodationProvided,
+  setAccommodationProvided,
+  minSalary,
+  setMinSalary,
+  salaryCurrency,
+  setSalaryCurrency,
+  salaryCurrencies,
   resetFilters,
+  idPrefix = "filters",
+  onFilterCommit,
 }: QuickFiltersProps) {
   const [countriesOpen, setCountriesOpen] = useState(false)
+  const positionId = `${idPrefix}-work-position`
+  const salaryMinId = `${idPrefix}-salary-min-filter`
+  const salaryCurrencyId = `${idPrefix}-salary-currency-filter`
 
   const europeCountries = countries.filter((c) => europeanCountryCodes.has(c.code))
   const outsideEurope = countries.filter((c) => !europeanCountryCodes.has(c.code))
   const toggleCountry = (code: string) => {
     setSelectedCountries((prev) => prev.includes(code) ? prev.filter((x) => x !== code) : [...prev, code])
+    onFilterCommit?.("Filter krajiny bol použitý")
   }
 
   const toggleJobType = (id: string) => {
     setSelectedJobTypes((prev) =>
       prev.includes(id) ? prev.filter((jt) => jt !== id) : [...prev, id]
     )
+    onFilterCommit?.("Filter typu práce bol použitý")
+  }
+
+  const toggleLanguage = (id: string) => {
+    setSelectedLanguages((prev) =>
+      prev.includes(id) ? prev.filter((language) => language !== id) : [...prev, id]
+    )
+    onFilterCommit?.("Filter jazyka bol použitý")
+  }
+
+  const toggleHighlightTier = (id: HighlightTier) => {
+    setSelectedHighlightTiers((prev) =>
+      prev.includes(id) ? prev.filter((tier) => tier !== id) : [...prev, id]
+    )
+    onFilterCommit?.("Filter zvýraznenia bol použitý")
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+        <Label htmlFor={positionId} className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Pracovná pozícia
         </Label>
-        <MultiSelect
-          id="work-position"
-          name="work-position"
-          options={categories}
-          selected={selectedCategories}
-          onChange={setSelectedCategories}
-          placeholder="Všetky pozície"
-          className="w-full"
-        />
+        <select
+          id={positionId}
+          name={positionId}
+          value={selectedCategories[0] ?? "all"}
+          onChange={(event) => {
+            const value = event.target.value
+            setSelectedCategories(value === "all" ? [] : [value])
+            onFilterCommit?.("Filter pozície bol použitý")
+          }}
+          className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-emerald-100"
+        >
+          <option value="all">Všetky pozície</option>
+          {categories.map((category) => (
+            <option key={category.value} value={category.value}>
+              {category.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+        <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Krajina
         </Label>
-        <div className="space-y-1 border rounded-lg p-2">
+        <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/40 p-1.5">
           <button
             type="button"
-            className="flex items-center justify-between w-full px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-600 hover:bg-white hover:text-slate-950"
             onClick={() => setCountriesOpen(!countriesOpen)}
           >
             <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${selectedCountries.length > 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+              <span className={`size-2 rounded-full ${selectedCountries.length > 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
               {selectedCountries.length > 0
                 ? `${selectedCountries.length} vybratých`
                 : "Všetky krajiny"}
             </div>
-            <ChevronDown className={`h-4 w-4 transition-transform ${countriesOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`size-4 transition-transform ${countriesOpen ? 'rotate-180' : ''}`} />
           </button>
           {countriesOpen && (
             <div className="pt-1 space-y-2 animate-fade-in">
@@ -139,7 +194,7 @@ export function QuickFilters({
       </div>
 
       <div>
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+        <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Druh práce
         </Label>
         <div className="flex flex-wrap gap-1.5">
@@ -148,11 +203,11 @@ export function QuickFilters({
               key={jt.id}
               type="button"
               onClick={() => toggleJobType(jt.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selectedJobTypes.includes(jt.id) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:border-primary/50 hover:text-foreground'}`}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors ${selectedJobTypes.includes(jt.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/50 hover:text-slate-950'}`}
             >
-              <div className={`h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${selectedJobTypes.includes(jt.id) ? 'bg-primary-foreground/20 border-transparent' : 'border-muted-foreground/30'}`}>
+              <div className={`size-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${selectedJobTypes.includes(jt.id) ? 'bg-primary-foreground/20 border-transparent' : 'border-muted-foreground/30'}`}>
                 {selectedJobTypes.includes(jt.id) && (
-                  <Check className="h-2.5 w-2.5 text-current" strokeWidth={3} />
+                  <Check className="size-2.5 text-current" strokeWidth={3} />
                 )}
               </div>
               {jt.label}
@@ -162,33 +217,133 @@ export function QuickFilters({
       </div>
 
       <div>
-        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+        <Label htmlFor={salaryMinId} className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Mzda
+        </Label>
+        <div className="grid grid-cols-[minmax(0,1fr)_92px] gap-2">
+          <input
+            id={salaryMinId}
+            name={salaryMinId}
+            data-cy="salary-min-filter"
+            inputMode="numeric"
+            value={minSalary}
+            onChange={(event) => setMinSalary(event.target.value)}
+            placeholder="Min. mzda"
+            className="h-9 min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-primary focus:ring-4 focus:ring-emerald-100"
+          />
+          <select
+            id={salaryCurrencyId}
+            name={salaryCurrencyId}
+            value={salaryCurrency}
+            onChange={(event) => {
+              setSalaryCurrency(event.target.value)
+              onFilterCommit?.("Mena mzdy bola upravená")
+            }}
+            className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm font-medium text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-emerald-100"
+            aria-label="Mena mzdy"
+          >
+            {salaryCurrencies.map((currency) => (
+              <option key={currency.id} value={currency.id}>{currency.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Jazyk
+        </Label>
+        <div className="flex flex-wrap gap-1.5">
+          {languageOptions.map((language) => (
+            <ToggleButton
+              key={language.id}
+              active={selectedLanguages.includes(language.id)}
+              dataCy={`language-filter-${language.id}`}
+              label={language.label}
+              onClick={() => toggleLanguage(language.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Zvýraznenie
+        </Label>
+        <div className="flex flex-wrap gap-1.5">
+          {highlightOptions.map((highlight) => (
+            <ToggleButton
+              key={highlight.id}
+              active={selectedHighlightTiers.includes(highlight.id)}
+              dataCy={`highlight-filter-${highlight.id}`}
+              label={highlight.label}
+              onClick={() => toggleHighlightTier(highlight.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Ubytovanie
         </Label>
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            onClick={() => setAccommodationNotProvided(!accommodationNotProvided)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${accommodationNotProvided ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:border-primary/50 hover:text-foreground'}`}
+            data-cy="accommodation-filter"
+            onClick={() => {
+              setAccommodationProvided(!accommodationProvided)
+              onFilterCommit?.("Filter ubytovania bol použitý")
+            }}
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors ${accommodationProvided ? 'border-primary bg-primary text-primary-foreground' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/50 hover:text-slate-950'}`}
           >
-            <div className={`h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${accommodationNotProvided ? 'bg-primary-foreground/20 border-transparent' : 'border-muted-foreground/30'}`}>
-              {accommodationNotProvided && (
-                <Check className="h-2.5 w-2.5 text-current" strokeWidth={3} />
+            <div className={`size-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${accommodationProvided ? 'bg-primary-foreground/20 border-transparent' : 'border-muted-foreground/30'}`}>
+              {accommodationProvided && (
+                <Check className="size-2.5 text-current" strokeWidth={3} />
               )}
             </div>
-            Nezabezpečené / nehradené
+            S ubytovaním
           </button>
         </div>
       </div>
 
       <Button
         variant="outline"
-        onClick={resetFilters}
-        className="w-full text-muted-foreground hover:text-foreground"
+        onClick={() => {
+          resetFilters()
+          onFilterCommit?.("Filtre boli resetované")
+        }}
+        className="h-9 w-full text-slate-500 hover:text-slate-950"
       >
-        <RotateCcw className="h-4 w-4 mr-2" />
+        <RotateCcw className="size-4 mr-2" />
         Resetovať filtre
       </Button>
     </div>
+  )
+}
+
+function ToggleButton({
+  active,
+  dataCy,
+  label,
+  onClick,
+}: {
+  active: boolean
+  dataCy: string
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      data-cy={dataCy}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors ${active ? 'border-primary bg-primary text-primary-foreground' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/50 hover:text-slate-950'}`}
+    >
+      <div className={`size-3.5 rounded border flex items-center justify-center shrink-0 transition-colors ${active ? 'bg-primary-foreground/20 border-transparent' : 'border-muted-foreground/30'}`}>
+        {active && <Check className="size-2.5 text-current" strokeWidth={3} />}
+      </div>
+      {label}
+    </button>
   )
 }

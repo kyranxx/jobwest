@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_SITE_URL: https://jobwest.sk
+      NEXT_PUBLIC_PORTAL_CODE: sk
+      NEXT_PUBLIC_PORTAL_DOMAIN: jobwest.sk
+      NEXT_PUBLIC_APP_URL: https://jobwest.sk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Cypress
+        run: pnpm e2e
+
+      - name: Production readiness verifier smoke test
+        run: |
+          set +e
+          output="$(pnpm verify:deploy -- --skip-vercel 2>&1)"
+          status="$?"
+          set -e
+          echo "$output"
+          test "$status" -ne 0
+          echo "$output" | grep -q "FAIL SUPABASE_SERVICE_ROLE_KEY is configured"
+          echo "$output" | grep -q "PASS Portal code is registered for JobWest CEE rollout"

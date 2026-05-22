@@ -3,10 +3,23 @@
 import { getSupabaseServerClient } from "@/lib/utils/supabase/server"
 import { redirect } from "next/navigation"
 
-export async function signOut() {
+async function auth() {
   const supabase = getSupabaseServerClient()
-  
-  const { error } = await supabase.auth.signOut()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  return { session, supabase }
+}
+
+export async function signOut() {
+  const session = await auth()
+
+  if (!session.session) {
+    redirect("/")
+  }
+
+  const { error } = await session.supabase.auth.signOut()
   
   if (error) {
     console.error("Error signing out:", error)

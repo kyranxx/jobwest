@@ -1,27 +1,38 @@
-import { HighlightActions } from "@/components/payments/highlight-actions";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { paymentTiers } from "@/lib/payments";
 
 export default function MyPayments() {
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Moje platby</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Testovacie platby pre zvýraznenie inzerátov. Bez Stripe kľúča sa použije demo režim.
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Platby</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Zvýraznite ponuku a zvýšte jej viditeľnosť v zozname.
         </p>
       </div>
 
-      <div className="rounded-lg border bg-card p-5">
-        <h2 className="font-semibold">Zvýraznenie inzerátu</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">TOP</span> posúva ponuku vyššie.{" "}
-          <span className="font-medium text-foreground">Exclusive</span> je úplne najvyšší tier.
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="font-semibold text-slate-950">Zvýraznenie</h2>
+        <p className="mb-4 mt-1 text-sm leading-6 text-slate-600">
+          Zvýraznenie sa spúšťa pri konkrétnom inzeráte, aby sa platba správne priradila
+          k firme, ponuke a admin reportingu.
         </p>
-        <HighlightActions />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[paymentTiers.top, paymentTiers.exclusive].map((tier) => (
+            <div key={tier.name} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-950">{tier.label}</p>
+              <p className="mt-1 text-sm text-slate-600">{tier.description}</p>
+            </div>
+          ))}
+        </div>
+        <Button asChild className="mt-4">
+          <Link href="/ucet/moje-inzeraty">Vybrať inzerát na zvýraznenie</Link>
+        </Button>
       </div>
 
-      <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-        <p><span className="font-medium text-foreground">Pridanie inzerátu</span> je <span className="text-emerald-600 font-medium">zadarmo</span>.</p>
-        <p className="mt-0.5">TOP a Exclusive zvýraznenia sú platené. Pripravený budúci poplatok za inzerát: 1,99&nbsp;EUR.</p>
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm text-emerald-900">
+        Pridanie inzerátu je zdarma. Platíte iba za zvýraznenie.
       </div>
     </div>
   );

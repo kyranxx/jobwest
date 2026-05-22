@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@supabase/realtime-js>ws': 8.18.3
+  '@supabase/realtime-js>@types/phoenix': 1.6.6
+
 importers:
 
   .:
@@ -51,7 +55,7 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(@supabase/supabase-js@2.52.1)
       '@supabase/supabase-js':
-        specifier: ^2.50.0
+        specifier: ^2.52.1
         version: 2.52.1
       '@types/js-cookie':
         specifier: ^3.0.6
@@ -138,6 +142,9 @@ importers:
       eslint-config-next:
         specifier: 15.4.8
         version: 15.4.8(eslint@9.31.0(jiti@1.21.7))(typescript@5.8.3)
+      jiti:
+        specifier: 1.21.7
+        version: 1.21.7
       postcss:
         specifier: ^8.5
         version: 8.5.6

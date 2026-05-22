@@ -1,0 +1,37 @@
+[
+  {
+    "code": "sk",
+    "countryName": "Slovensko",
+    "domain": "jobwest.sk",
+    "locale": "sk-SK",
+    "name": "JobWest Slovensko"
+  },
+  {
+    "code": "ro",
+    "countryName": "Rumunsko",
+    "domain": "jobwest.ro",
+    "locale": "ro-RO",
+    "name": "JobWest România"
+  },
+  {
+    "code": "bg",
+    "countryName": "Bulharsko",
+    "domain": "jobwest.bg",
+    "locale": "bg-BG",
+    "name": "JobWest Bulgaria"
+  },
+  {
+    "code": "hu",
+    "countryName": "Maďarsko",
+    "domain": "jobwest.hu",
+    "locale": "hu-HU",
+    "name": "JobWest Magyarország"
+  },
+  {
+    "code": "ua",
+    "countryName": "Ukrajina",
+    "domain": "jobwest.ua",
+    "locale": "uk-UA",
+    "name": "JobWest Україна"
+  }
+]

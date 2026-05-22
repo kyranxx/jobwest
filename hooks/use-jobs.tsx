@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { useAuth } from "./use-auth"
+import { siteConfig } from "@/lib/site"
 import type { JobSummary } from "@/lib/types"
 
 type JobsState = {
@@ -12,15 +13,20 @@ type JobsState = {
 }
 
 const JOBS_CACHE_DURATION = 5 * 60 * 1000
-let cachedJobs: JobSummary[] | null = null
-let lastJobsFetch = 0
+type JobsCacheEntry = {
+  jobs: JobSummary[]
+  fetchedAt: number
+}
+
+const jobsCache = new Map<string, JobsCacheEntry>()
 
 export function useJobs() {
   const { user } = useAuth()
 
+  const cachedEntry = user ? jobsCache.get(user.id) : null
   const [state, setState] = useState<JobsState>({
-    jobs: cachedJobs ?? [],
-    loading: !cachedJobs,
+    jobs: cachedEntry?.jobs ?? [],
+    loading: Boolean(user) && !cachedEntry,
     error: null
   })
   const supabase = getSupabaseBrowserClient()
@@ -32,8 +38,9 @@ export function useJobs() {
       return
     }
 
-    if (!force && cachedJobs && Date.now() - lastJobsFetch < JOBS_CACHE_DURATION) {
-      setState({ jobs: cachedJobs, loading: false, error: null })
+    const cachedEntry = jobsCache.get(user.id)
+    if (!force && cachedEntry && Date.now() - cachedEntry.fetchedAt < JOBS_CACHE_DURATION) {
+      setState({ jobs: cachedEntry.jobs, loading: false, error: null })
       return
     }
 
@@ -44,6 +51,7 @@ export function useJobs() {
         .from('jobs')
         .select('id, title, location, created_at')
         .eq('user_id', user.id)
+        .eq('portal_code', siteConfig.portalCode)
         .order('created_at', { ascending: false })
 
       if (!mounted.current) return
@@ -59,8 +67,7 @@ export function useJobs() {
         location: job.location ?? "",
         created_at: job.created_at ?? new Date().toISOString(),
       }))
-      cachedJobs = jobs
-      lastJobsFetch = Date.now()
+      jobsCache.set(user.id, { jobs, fetchedAt: Date.now() })
       setState({ jobs, loading: false, error: null })
     } catch (err) {
       if (!mounted.current) return
@@ -72,10 +79,11 @@ export function useJobs() {
   const refetch = useCallback(() => fetchJobs(true), [fetchJobs])
 
   const invalidateCache = useCallback(() => {
-    cachedJobs = null
-    lastJobsFetch = 0
+    if (user) {
+      jobsCache.delete(user.id)
+    }
     fetchJobs(true)
-  }, [fetchJobs])
+  }, [fetchJobs, user])
 
   useEffect(() => {
     fetchJobs()

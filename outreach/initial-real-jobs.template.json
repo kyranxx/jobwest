@@ -1,0 +1,17 @@
+[
+  {
+    "company": "NAHRADTE_REALNOU_AGENTUROU",
+    "contact_info": "realny-email-alebo-telefon",
+    "title": "NAHRADTE_REALNOU_POZICIOU",
+    "description": "Sem vlozte schvaleny realny popis ponuky. Import vyzaduje minimalne 40 znakov a odmietne test/demo/lorem ipsum text.",
+    "category": "Sklady a logistika",
+    "country_code": "de",
+    "location": "Mnichov",
+    "salary": "2200 EUR/mesiac",
+    "job_type": "na-zmluvu",
+    "accommodation_provided": true,
+    "accommodation_paid": false,
+    "portal_code": "sk",
+    "portal_domain": "jobwest.sk"
+  }
+]

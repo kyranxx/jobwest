@@ -6,11 +6,28 @@ const checkEmailSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
 });
 
+function emailCheckUnavailable() {
+  if (process.env.NODE_ENV !== "production") {
+    return NextResponse.json({ exists: false, degraded: true });
+  }
+
+  return NextResponse.json(
+    { error: "Kontrola e-mailu je momentálne nedostupná." },
+    { status: 503 },
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
     const body = await req.json();
     const { email } = checkEmailSchema.parse(body);
+
+    if (process.env.NODE_ENV === "production") {
+      // Production email checks must not enumerate accounts.
+      return NextResponse.json({ exists: false, checked: false });
+    }
+
+    const supabase = getSupabaseServerClient();
 
     const { data, error } = await supabase
       .from("users")
@@ -19,10 +36,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      // PGRST116 means no rows found. Other Supabase errors should not break
-      // local/demo registration checks while the database is being finished.
       console.error("Email check failed:", error.message);
-      return NextResponse.json({ exists: false, degraded: true });
+      return emailCheckUnavailable();
     }
 
     return NextResponse.json({ exists: !!data });
@@ -31,6 +46,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
     console.error("Email check failed:", error);
-    return NextResponse.json({ exists: false, degraded: true });
+    return emailCheckUnavailable();
   }
 }

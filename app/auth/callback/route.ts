@@ -36,6 +36,7 @@ export async function GET(request: Request) {
         }
       } else if (profileError) {
         console.error('Error fetching user profile:', profileError);
+        return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
 
       // Redirect to dashboard after successful login

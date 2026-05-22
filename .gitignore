@@ -5,6 +5,7 @@
 
 # next.js
 /.next/
+/.next-*/
 /out/
 
 # production
@@ -16,7 +17,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dev-server.*.log
+.build-*.log
+.codex*.log
+.next-start-*.log
+.lighthouse-temp/
+.qa-screens/
+.cdp-profile*/
 .supabase-db-password.local
+cypress/screenshots/
+cypress/videos/
 
 # env files
 .env*
@@ -26,4 +35,4 @@ dev-server.*.log
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+.env*.local

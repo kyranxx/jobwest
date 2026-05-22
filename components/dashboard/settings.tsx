@@ -67,15 +67,30 @@ function PasswordSettings() {
   });
 
   async function onSubmit(values: z.infer<typeof passwordFormSchema>) {
+    if (!user?.email) {
+      toast.error("Nepodarilo sa overiť používateľa.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: values.currentPassword,
+      });
+
+      if (reauthError) {
+        toast.error("Aktuálne heslo nie je správne.");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: values.newPassword,
       });
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Heslo úspešne zmenené!");
+        toast.success("Heslo bolo zmenené.");
         form.reset();
       }
     } catch {
@@ -87,7 +102,7 @@ function PasswordSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Zmena hesla</h2>
+      <h2 className="text-lg font-semibold mb-4 text-slate-950">Heslo</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Input
@@ -160,7 +175,7 @@ function PasswordSettings() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Ukladám..." : "Zmeniť heslo"}</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Ukladám..." : "Uložiť heslo"}</Button>
         </form>
       </Form>
     </div>
@@ -210,7 +225,7 @@ function AvatarSettings() {
       if (updateError) {
         toast.error(updateError.message);
       } else {
-        toast.success("Avatar úspešne zmenený!");
+        toast.success("Avatar bol zmenený.");
         form.reset();
       }
     } catch {
@@ -222,7 +237,7 @@ function AvatarSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4 mt-8">Zmena avatara</h2>
+      <h2 className="text-lg font-semibold mb-4 mt-8 text-slate-950">Avatar</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
@@ -247,7 +262,7 @@ function AvatarSettings() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Nahrávam..." : "Zmeniť avatar"}</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Nahrávam..." : "Uložiť avatar"}</Button>
         </form>
       </Form>
     </div>
@@ -256,8 +271,9 @@ function AvatarSettings() {
 
 export default function Settings() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Nastavenia</h1>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h1 className="text-2xl font-semibold mb-1 text-slate-950">Nastavenia</h1>
+      <p className="mb-6 text-sm text-slate-600">Správa prihlásenia a profilu.</p>
       <PasswordSettings />
       <AvatarSettings />
     </div>

@@ -4,6 +4,7 @@ import React from "react"
 import { QuickFilters } from "@/components/ui/quick-filters"
 import { Button } from "@/components/ui/button"
 import { LayoutGrid, Rows3 } from "@/components/ui/icons"
+import type { HighlightTier } from "@/lib/types"
 
 interface FiltersProps {
   selectedCategories: string[]
@@ -15,18 +16,33 @@ interface FiltersProps {
   selectedJobTypes: string[]
   setSelectedJobTypes: (jobTypes: string[] | ((prev: string[]) => string[])) => void
   jobTypes: readonly { id: string; label: string }[]
-  accommodationNotProvided: boolean
-  setAccommodationNotProvided: (v: boolean) => void
+  selectedLanguages: string[]
+  setSelectedLanguages: (languages: string[] | ((prev: string[]) => string[])) => void
+  languageOptions: readonly { id: string; label: string }[]
+  selectedHighlightTiers: HighlightTier[]
+  setSelectedHighlightTiers: (tiers: HighlightTier[] | ((prev: HighlightTier[]) => HighlightTier[])) => void
+  highlightOptions: readonly { id: HighlightTier; label: string }[]
+  accommodationProvided: boolean
+  setAccommodationProvided: (v: boolean) => void
+  minSalary: string
+  setMinSalary: (value: string) => void
+  salaryCurrency: string
+  setSalaryCurrency: (value: string) => void
+  salaryCurrencies: readonly { id: string; label: string }[]
   resetFilters: () => void
   filteredJobsCount: number
   viewMode: "grid" | "list"
   setViewMode: (viewMode: "grid" | "list") => void
+  onFilterCommit?: (message: string) => void
+  onViewModeChange?: (message: string) => void
 }
 
 export function Filters({
   filteredJobsCount,
   viewMode,
   setViewMode,
+  onFilterCommit,
+  onViewModeChange,
   ...props
 }: FiltersProps) {
   const getOfferText = (count: number) => {
@@ -36,33 +52,41 @@ export function Filters({
   }
 
   return (
-    <div className="hidden md:block w-64 shrink-0">
-      <div className="sticky top-20 rounded-lg border bg-card p-4">
-        <div className="flex items-center justify-between mb-4">
+    <div className="hidden w-64 shrink-0 md:block xl:w-72">
+      <div className="sticky top-20 rounded-lg border border-[#ded9df] bg-white p-4 shadow-[0_14px_44px_rgba(36,16,51,0.04)]">
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <span className="text-lg font-bold text-foreground">{filteredJobsCount}</span>
-            <span className="text-xs text-muted-foreground ml-1">{getOfferText(filteredJobsCount)}</span>
+            <span className="text-xl font-semibold text-slate-950">{filteredJobsCount}</span>
+            <span className="text-xs text-slate-500 ml-1">{getOfferText(filteredJobsCount)}</span>
           </div>
-          <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+          <div className="flex items-center gap-0.5 rounded-md bg-emerald-50 p-0.5">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
               size="icon"
-              className="h-7 w-7 rounded-sm"
-              onClick={() => setViewMode("grid")}
+              className="size-7 rounded-md"
+              onClick={() => {
+                setViewMode("grid")
+                onViewModeChange?.("Zobrazenie prepnuté na mriežku")
+              }}
+              aria-label="Mriežka"
             >
-              <LayoutGrid className="h-3.5 w-3.5" />
+              <LayoutGrid className="size-3.5" />
             </Button>
             <Button
               variant={viewMode === "list" ? "default" : "ghost"}
               size="icon"
-              className="h-7 w-7 rounded-sm"
-              onClick={() => setViewMode("list")}
+              className="size-7 rounded-md"
+              onClick={() => {
+                setViewMode("list")
+                onViewModeChange?.("Zobrazenie prepnuté na zoznam")
+              }}
+              aria-label="Zoznam"
             >
-              <Rows3 className="h-3.5 w-3.5" />
+              <Rows3 className="size-3.5" />
             </Button>
           </div>
         </div>
-        <QuickFilters {...props} />
+        <QuickFilters {...props} idPrefix="desktop" onFilterCommit={onFilterCommit} />
       </div>
     </div>
   )

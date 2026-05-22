@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { paymentTiers, type PaymentTier } from "@/lib/payments";
+import { paymentTiers } from "@/lib/payments";
 
 type HighlightActionsProps = {
-  jobId?: string | number;
+  jobId: string | number;
   compact?: boolean;
 };
 
-export function HighlightActions({ jobId = "demo", compact = false }: HighlightActionsProps) {
+type HighlightPaymentTier = "top" | "exclusive";
+
+export function HighlightActions({ jobId, compact = false }: HighlightActionsProps) {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
-  async function startCheckout(tier: PaymentTier) {
+  async function startCheckout(tier: HighlightPaymentTier) {
     setLoadingTier(tier);
     try {
       const response = await fetch("/api/stripe/checkout", {
@@ -36,30 +38,24 @@ export function HighlightActions({ jobId = "demo", compact = false }: HighlightA
   }
 
   return (
-    <div className={compact ? "flex flex-wrap gap-2" : "grid gap-3 sm:grid-cols-3"}>
+    <div className={compact ? "flex flex-wrap gap-2" : "grid gap-3 sm:grid-cols-2"}>
       <Button
         variant="outline"
+        className="h-12 justify-between border-slate-200 bg-white px-4"
         onClick={() => startCheckout("top")}
         disabled={!!loadingTier}
       >
-        {loadingTier === "top" ? "..." : paymentTiers.top.label}
+        <span>{loadingTier === "top" ? "..." : paymentTiers.top.label}</span>
+        {!compact && <span className="text-xs font-normal text-slate-500">vyššie v zozname</span>}
       </Button>
       <Button
-        className="bg-amber-500 text-black hover:bg-amber-400"
+        className="h-12 justify-between bg-amber-500 px-4 text-black hover:bg-amber-400"
         onClick={() => startCheckout("exclusive")}
         disabled={!!loadingTier}
       >
-        {loadingTier === "exclusive" ? "..." : paymentTiers.exclusive.label}
+        <span>{loadingTier === "exclusive" ? "..." : paymentTiers.exclusive.label}</span>
+        {!compact && <span className="text-xs font-normal text-amber-950/80">najvyššia viditeľnosť</span>}
       </Button>
-      {!compact && (
-        <Button
-          variant="secondary"
-          onClick={() => startCheckout("add-ad")}
-          disabled={!!loadingTier}
-        >
-          {loadingTier === "add-ad" ? "..." : paymentTiers["add-ad"].label}
-        </Button>
-      )}
     </div>
   );
 }
