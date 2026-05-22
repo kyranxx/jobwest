@@ -3,6 +3,7 @@
 
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE SCHEMA IF NOT EXISTS private;
 
 CREATE TABLE IF NOT EXISTS public.users (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -84,6 +85,25 @@ GRANT INSERT, UPDATE, DELETE ON public.jobs TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.jobs_id_seq TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.users TO authenticated;
 GRANT SELECT ON public.payments TO authenticated;
+
+CREATE OR REPLACE FUNCTION private.is_jobwest_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.users
+    WHERE users.id = auth.uid()
+      AND users.role IN ('admin', 'owner')
+  );
+$$;
+
+REVOKE ALL ON FUNCTION private.is_jobwest_admin() FROM PUBLIC;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT EXECUTE ON FUNCTION private.is_jobwest_admin() TO authenticated;
 
 DO $$
 BEGIN
@@ -202,14 +222,7 @@ BEGIN
     ON public.jobs
     FOR SELECT
     TO authenticated
-    USING (
-      EXISTS (
-        SELECT 1
-        FROM public.users
-        WHERE users.id = (select auth.uid())
-          AND users.role IN ('admin', 'owner')
-      )
-    );
+    USING (private.is_jobwest_admin());
   END IF;
 
   IF NOT EXISTS (
@@ -222,14 +235,7 @@ BEGIN
     ON public.payments
     FOR SELECT
     TO authenticated
-    USING (
-      EXISTS (
-        SELECT 1
-        FROM public.users
-        WHERE users.id = (select auth.uid())
-          AND users.role IN ('admin', 'owner')
-      )
-    );
+    USING (private.is_jobwest_admin());
   END IF;
 
   IF NOT EXISTS (
@@ -242,14 +248,7 @@ BEGIN
     ON public.users
     FOR SELECT
     TO authenticated
-    USING (
-      EXISTS (
-        SELECT 1
-        FROM public.users admin_user
-        WHERE admin_user.id = (select auth.uid())
-          AND admin_user.role IN ('admin', 'owner')
-      )
-    );
+    USING (private.is_jobwest_admin());
   END IF;
 
   IF NOT EXISTS (
