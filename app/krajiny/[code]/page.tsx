@@ -3,7 +3,9 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Building2, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { Button } from "@/components/ui/button"
+import { getBreadcrumbStructuredData } from "@/lib/breadcrumbs"
 import { countries, getCountryInPhrase, getCountryPath, getCountrySearchTitle } from "@/lib/countries"
 import { getVisibleJobs } from "@/lib/job-source"
 import { formatJobType, getJobPath } from "@/lib/jobs"
@@ -66,6 +68,11 @@ export default async function CountryJobsPage({ params }: CountryPageProps) {
   const title = getCountrySearchTitle(country.code, country.name)
   const inCountry = getCountryInPhrase(country.code, country.name)
   const marketInfo = getCountryMarketInfo(country.name, inCountry, countryJobs)
+  const breadcrumbs = [
+    { label: "Domov", href: "/" },
+    { label: "Krajiny", href: "/krajiny" },
+    { label: country.name, href: getCountryPath(country.code) },
+  ]
   const itemList = isDemoMode ? null : {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -81,15 +88,25 @@ export default async function CountryJobsPage({ params }: CountryPageProps) {
   return (
     <main className="min-h-screen bg-[#f4f6f1]">
       {itemList && (
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(itemList).replace(/</g, "\\u003c"),
-          }}
-        />
+        <>
+          <script
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(itemList).replace(/</g, "\\u003c"),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(getBreadcrumbStructuredData(siteUrl, breadcrumbs)).replace(/</g, "\\u003c"),
+            }}
+          />
+        </>
       )}
       <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-10">
+        <Breadcrumbs items={breadcrumbs} />
         <Button asChild variant="ghost" className="mb-5 -ml-2 text-slate-600">
           <Link href="/" prefetch={false}>
             <ArrowLeft className="size-4" />

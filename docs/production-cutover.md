@@ -12,6 +12,7 @@ Use this order to avoid sending `jobwest.sk` to an old or incomplete deployment.
   - `db-migrations/admin-portal-metrics.sql`
   - `db-migrations/job-contact-info.sql`
   - `db-migrations/avatar-storage.sql`
+  - `db-migrations/auth-user-profile-trigger.sql`
 - Confirm these columns exist:
   - `jobs.portal_code`
   - `jobs.portal_domain`
@@ -86,7 +87,7 @@ checkout.session.completed
 
 Save the endpoint signing secret as Vercel Production `STRIPE_WEBHOOK_SECRET`.
 
-Import approved real job ads before deploying. Do not import placeholders or unapproved scraped ads.
+Import approved real job ads before the public launch. Development production deploys may have zero ads. Do not import placeholders or unapproved scraped ads.
 
 ```bash
 pnpm jobs:import path/to/real-jobs.json --validate-only
@@ -102,7 +103,7 @@ vercel env pull .env.production.local --environment=production --yes
 pnpm verify:deploy
 ```
 
-This must pass before deploying production. When run locally from this linked repo, the verifier checks both pulled env values and the linked Vercel project env names. Vercel production builds run the same deploy gate without Vercel CLI self-inspection, because the build already receives the production env directly. If you need a local-only check without calling Vercel CLI, run:
+This must pass before deploying production. It validates infrastructure but allows zero job ads while the app is still being built. When run locally from this linked repo, the verifier checks pulled public config and the linked Vercel project env names. Sensitive Vercel values may remain blank after a local pull. Vercel production builds run the same deploy gate without Vercel CLI self-inspection, because the build receives the real production secrets directly and verifies the Supabase schema plus Stripe API. If you need a local-only check without calling Vercel CLI, run:
 
 ```bash
 pnpm verify:deploy -- --skip-vercel

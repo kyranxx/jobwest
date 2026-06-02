@@ -1,0 +1,26 @@
+import assert from "node:assert/strict"
+import { existsSync, readFileSync } from "node:fs"
+
+const layout = readFileSync("app/layout.tsx", "utf8")
+const styles = readFileSync("app/globals.css", "utf8")
+const homePage = readFileSync("app/page.tsx", "utf8")
+const jobsIndexPage = readFileSync("app/ponuky/page.tsx", "utf8")
+const jobPortalClient = readFileSync("components/ui/job-portal-client.tsx", "utf8")
+const jobPage = readFileSync("app/ponuky/[slug]/page.tsx", "utf8")
+const countryPage = readFileSync("app/krajiny/[code]/page.tsx", "utf8")
+
+assert.match(layout, /export const viewport/)
+assert.match(layout, /themeColor/)
+assert.match(layout, /colorScheme/)
+assert.match(layout, /href="#main-content"/)
+assert.match(layout, /id="main-content"/)
+assert.match(homePage, /<main>/)
+assert.match(jobsIndexPage, /<main>/)
+assert.doesNotMatch(jobPortalClient, /<main/)
+assert.match(styles, /prefers-reduced-motion:\s*reduce/)
+assert.equal(existsSync("app/not-found.tsx"), true)
+assert.equal(existsSync("app/error.tsx"), true)
+assert.equal(existsSync("app/llms.txt/route.ts"), true)
+assert.equal(existsSync("app/.well-known/security.txt/route.ts"), true)
+assert.match(jobPage, /Breadcrumbs/)
+assert.match(countryPage, /Breadcrumbs/)

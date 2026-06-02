@@ -201,6 +201,25 @@ export function isPublishableJob(job: Pick<Job, "title" | "company" | "descripti
   return true
 }
 
+export function isPublishableRealJob(
+  job: Pick<Job, "title" | "company" | "description" | "contactInfo">,
+): boolean {
+  if (!isPublishableJob(job)) return false
+
+  const contactInfo = normalizeText(job.contactInfo)
+  if (!contactInfo) return false
+
+  return !hasPlaceholderContactDomain(contactInfo) && !hasPlaceholderPhoneNumber(contactInfo)
+}
+
+function hasPlaceholderContactDomain(value: string) {
+  return /\bexample\.(com|org|net|invalid)\b|\.example\b/i.test(value)
+}
+
+function hasPlaceholderPhoneNumber(value: string) {
+  return /\+\d{1,3}(?:[\s()-]*0){6,}\b/.test(value)
+}
+
 export function formatJobType(value: string): string {
   return jobTypes.find((type) => type.id === value)?.label ?? value
 }

@@ -115,6 +115,18 @@ try {
   assert.notEqual(placeholderContactRun.status, 0)
   assert.match(placeholderContactRun.stderr, /must not use example or placeholder contact domains/)
 
+  const placeholderPhoneRun = runImporter(
+    writeJobs("placeholder-phone-jobs.json", [
+      {
+        ...validJob,
+        contact_info: "+43 000 000 000",
+      },
+    ]),
+  )
+
+  assert.notEqual(placeholderPhoneRun.status, 0)
+  assert.match(placeholderPhoneRun.stderr, /must not use a placeholder phone number/)
+
   const badPortalRun = runImporter(
     writeJobs("bad-portal-jobs.json", [
       {

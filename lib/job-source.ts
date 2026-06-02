@@ -1,5 +1,5 @@
 import { demoJobs } from "@/lib/demo-jobs"
-import { isPublishableJob, mapJobRowToJob, getJobSlug } from "@/lib/jobs"
+import { isPublishableJob, isPublishableRealJob, mapJobRowToJob, getJobSlug } from "@/lib/jobs"
 import type { Job } from "@/lib/types"
 import type { Tables } from "@/lib/database.types"
 import { getSupabasePublicConfig } from "@/lib/utils/supabase/env"
@@ -59,7 +59,7 @@ async function fetchVisibleJobs(): Promise<Job[]> {
 
     const rows = (await response.json()) as Tables<"jobs">[]
 
-    return rows.map(mapJobRowToJob).filter(isPublishableJob)
+    return rows.map(mapJobRowToJob).filter(isPublishableRealJob)
   } catch {
     return []
   } finally {

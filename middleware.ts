@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { buildContentSecurityPolicy } from '@/lib/csp'
+import { getSecurityHeaders } from '@/lib/security-headers'
 
 export async function middleware(request: NextRequest) {
   const cspHeaderValue = buildContentSecurityPolicy({
@@ -10,6 +11,9 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
 
   response.headers.set('Content-Security-Policy', cspHeaderValue)
+  for (const [name, value] of Object.entries(getSecurityHeaders())) {
+    response.headers.set(name, value)
+  }
 
   return response
 }

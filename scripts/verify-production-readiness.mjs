@@ -7,8 +7,11 @@ import { spawnSync } from "node:child_process"
 import {
   cleanVercelCliOutput,
   findMissingProductionEnv,
+  isPublishableProductionJob,
   isLiveStripeKeyForProductionSite,
   parseVercelDomainStatus,
+  shouldRequireLocalSecretValues,
+  shouldRequireProductionJobs,
 } from "./verify-production-readiness-helpers.mjs"
 
 const args = process.argv.slice(2)
@@ -45,6 +48,11 @@ const requiredEnv = [
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ]
+const serverSecretEnv = new Set([
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+])
 
 const checks = []
 
@@ -89,33 +97,6 @@ function formatError(error) {
   return error.message
 }
 
-function normalizeText(value) {
-  return (value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
-}
-
-function isPlaceholderText(value) {
-  const text = normalizeText(value)
-
-  if (!text) return true
-  if (placeholderValues.has(text)) return true
-
-  return /^(test|demo|sample|todo|placeholder)\s*(job|ponuka|inzerat|inzerát|company|firma)?\s*\d*$/i.test(text)
-}
-
-function isPublishableJobRow(job) {
-  if (isPlaceholderText(job.title) || isPlaceholderText(job.company) || isPlaceholderText(job.contact_info)) {
-    return false
-  }
-
-  if (normalizeText(job.title).length < 3) return false
-  if (normalizeText(job.company).length < 2) return false
-  if (normalizeText(job.description).length < 40) return false
-  if (normalizeText(job.description).includes("lorem ipsum")) return false
-  if (!/(@|\+\d{3,}|http|www\.)/i.test(job.contact_info ?? "")) return false
-
-  return true
-}
-
 function runVercel(args) {
   if (!args.every((arg) => /^[a-z0-9._:@=/-]+$/i.test(arg))) {
     return { ok: false, output: "unsafe vercel argument" }
@@ -137,7 +118,9 @@ function runVercel(args) {
   }
 }
 
-for (const name of requiredEnv) {
+const requireLocalSecretValues = shouldRequireLocalSecretValues(mode, includeVercelChecks)
+
+for (const name of requiredEnv.filter((name) => requireLocalSecretValues || !serverSecretEnv.has(name))) {
   record(`${name} is configured`, hasConfiguredEnv(name), hasConfiguredEnv(name) ? "" : "missing or placeholder")
 }
 
@@ -291,7 +274,7 @@ async function checkProductionJobs() {
     }
 
     const jobs = JSON.parse(text)
-    const publishableCount = Array.isArray(jobs) ? jobs.filter(isPublishableJobRow).length : 0
+    const publishableCount = Array.isArray(jobs) ? jobs.filter(isPublishableProductionJob).length : 0
     record(
       "Production portal has at least one real job ad with contact info",
       publishableCount > 0,
@@ -304,7 +287,9 @@ async function checkProductionJobs() {
 
 if (hasConfiguredEnv("NEXT_PUBLIC_SUPABASE_URL") && hasConfiguredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
   await checkSupabaseRest("/rest/v1/jobs?select=id,portal_code,portal_domain,highlight_tier,is_top,topped_at,contact_info&limit=1", "Supabase REST API and public jobs schema are reachable")
-  await checkProductionJobs()
+  if (shouldRequireProductionJobs(mode)) {
+    await checkProductionJobs()
+  }
 }
 
 if (hasConfiguredEnv("NEXT_PUBLIC_SUPABASE_URL") && hasConfiguredEnv("SUPABASE_SERVICE_ROLE_KEY")) {

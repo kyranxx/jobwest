@@ -2,8 +2,11 @@ import assert from "node:assert/strict"
 import {
   cleanVercelCliOutput,
   findMissingProductionEnv,
+  isPublishableProductionJob,
   isLiveStripeKeyForProductionSite,
   parseVercelDomainStatus,
+  shouldRequireLocalSecretValues,
+  shouldRequireProductionJobs,
 } from "../scripts/verify-production-readiness-helpers.mjs"
 
 const envListOutput = `
@@ -63,3 +66,23 @@ assert.equal(isLiveStripeKeyForProductionSite("https://jobwest.sk", "sk_live_rea
 assert.equal(isLiveStripeKeyForProductionSite("https://jobwest.sk", "sk_test_real"), false)
 assert.equal(isLiveStripeKeyForProductionSite("http://localhost:3000", "sk_test_real"), true)
 assert.equal(isLiveStripeKeyForProductionSite("https://127.0.0.1:3000", "sk_test_real"), true)
+
+assert.equal(shouldRequireProductionJobs("deploy"), false)
+assert.equal(shouldRequireProductionJobs("go-live"), true)
+assert.equal(shouldRequireProductionJobs(undefined), true)
+
+assert.equal(shouldRequireLocalSecretValues("deploy", true), false)
+assert.equal(shouldRequireLocalSecretValues("deploy", false), true)
+assert.equal(shouldRequireLocalSecretValues("go-live", true), true)
+
+const validProductionJob = {
+  title: "Skladnik v Nemecku",
+  company: "Real Agency s.r.o.",
+  description: "Overena pracovna ponuka s jasnou mzdou, nastupom, ubytovanim a kontaktom pre uchadzacov.",
+  contact_info: "jobs@real-agency.sk",
+}
+
+assert.equal(isPublishableProductionJob(validProductionJob), true)
+assert.equal(isPublishableProductionJob({ ...validProductionJob, contact_info: "jobs@westwerk.example" }), false)
+assert.equal(isPublishableProductionJob({ ...validProductionJob, contact_info: "jobs@example.com" }), false)
+assert.equal(isPublishableProductionJob({ ...validProductionJob, contact_info: "+43 000 000 000" }), false)

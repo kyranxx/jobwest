@@ -102,6 +102,10 @@ function assertRealJob(job, index) {
     throw new Error(`${label}: salary must include EUR, CHF, or GBP`)
   }
 
+  if (/\+\d{1,3}(?:[\s()-]*0){6,}\b/.test(job.contact_info)) {
+    throw new Error(`${label}: contact_info must not use a placeholder phone number`)
+  }
+
   if (!/(@|\+\d{3,}|http|www\.)/i.test(job.contact_info)) {
     throw new Error(`${label}: contact_info must contain an email, phone number, or URL`)
   }

@@ -53,3 +53,55 @@ export function isLiveStripeKeyForProductionSite(siteUrl, stripeSecretKey) {
 
   return isLocalHost || stripeSecretKey.startsWith("sk_live_")
 }
+
+export function shouldRequireProductionJobs(mode) {
+  return mode !== "deploy"
+}
+
+export function shouldRequireLocalSecretValues(mode, includeVercelChecks) {
+  return mode !== "deploy" || !includeVercelChecks
+}
+
+const jobPlaceholderValues = new Set([
+  "aaa",
+  "asdf",
+  "bla bla",
+  "blabla",
+  "demo",
+  "placeholder",
+  "qwerty",
+  "sample",
+  "test",
+  "testing",
+  "todo",
+  "xxx",
+])
+
+function normalizeText(value) {
+  return (value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function isPlaceholderText(value) {
+  const text = normalizeText(value)
+
+  if (!text) return true
+  if (jobPlaceholderValues.has(text)) return true
+
+  return /^(test|demo|sample|todo|placeholder)\s*(job|ponuka|inzerat|inzerát|company|firma)?\s*\d*$/i.test(text)
+}
+
+export function isPublishableProductionJob(job) {
+  if (isPlaceholderText(job.title) || isPlaceholderText(job.company) || isPlaceholderText(job.contact_info)) {
+    return false
+  }
+
+  if (normalizeText(job.title).length < 3) return false
+  if (normalizeText(job.company).length < 2) return false
+  if (normalizeText(job.description).length < 40) return false
+  if (normalizeText(job.description).includes("lorem ipsum")) return false
+  if (!/(@|\+\d{3,}|http|www\.)/i.test(job.contact_info ?? "")) return false
+  if (/\bexample\.(com|org|net|invalid)\b|\.example\b/i.test(job.contact_info ?? "")) return false
+  if (/\+\d{1,3}(?:[\s()-]*0){6,}\b/.test(job.contact_info ?? "")) return false
+
+  return true
+}

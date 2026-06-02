@@ -1,9 +1,13 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { MarketingEvent } from "@/components/marketing/marketing-event"
+import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import JobDetail from "@/components/ui/job-detail"
+import { getBreadcrumbStructuredData } from "@/lib/breadcrumbs"
 import { getVisibleJobBySlug } from "@/lib/job-source"
 import { getJobPostingStructuredData } from "@/lib/job-seo"
 import { getJobPath } from "@/lib/jobs"
+import { siteConfig } from "@/lib/site"
 
 type JobPageProps = {
   params: Promise<{ slug: string }>
@@ -47,6 +51,11 @@ export default async function JobPage({ params }: JobPageProps) {
   if (!result) notFound()
 
   const { job, isDemoMode } = result
+  const breadcrumbs = [
+    { label: "Domov", href: "/" },
+    { label: "Ponuky", href: "/ponuky" },
+    { label: job.title, href: getJobPath(job) },
+  ]
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6 md:py-8">
@@ -59,11 +68,31 @@ export default async function JobPage({ params }: JobPageProps) {
           }}
         />
       )}
+      {!isDemoMode && (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getBreadcrumbStructuredData(siteConfig.url, breadcrumbs)).replace(/</g, "\\u003c"),
+          }}
+        />
+      )}
       {isDemoMode && (
         <div data-cy="demo-data-warning" className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Toto je ukážková ponuka zobrazená iba preto, že produkčná databáza zatiaľ nevrátila publikované inzeráty.
         </div>
       )}
+      <MarketingEvent
+        name="view_item"
+        params={{
+          currency: "EUR",
+          item_id: String(job.id),
+          item_name: job.title,
+          item_category: job.category,
+          country_code: job.country_code,
+        }}
+      />
+      <Breadcrumbs items={breadcrumbs} />
       <JobDetail job={job} backHref="/" headingLevel="h1" />
     </main>
   )
