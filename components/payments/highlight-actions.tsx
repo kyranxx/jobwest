@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { trackMarketingEvent } from "@/lib/marketing-events";
 import { paymentTiers } from "@/lib/payments";
 
 type HighlightActionsProps = {
@@ -17,6 +18,7 @@ export function HighlightActions({ jobId, compact = false }: HighlightActionsPro
 
   async function startCheckout(tier: HighlightPaymentTier) {
     setLoadingTier(tier);
+    const toastId = toast.loading("Pripravujeme platbu...");
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -29,8 +31,24 @@ export function HighlightActions({ jobId, compact = false }: HighlightActionsPro
         throw new Error(data.error ?? "Platbu sa nepodarilo spustiť.");
       }
 
+      trackMarketingEvent("begin_checkout", {
+        currency: "EUR",
+        value: paymentTiers[tier].amount / 100,
+        items: [
+          {
+            item_id: String(jobId),
+            item_name: paymentTiers[tier].name,
+            item_category: "job_highlight",
+            item_variant: tier,
+            price: paymentTiers[tier].amount / 100,
+            quantity: 1,
+          },
+        ],
+      });
+      toast.success("Presmerovávame na platbu.", { id: toastId });
       window.location.href = data.url;
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error(error instanceof Error ? error.message : "Platbu sa nepodarilo spustiť.");
     } finally {
       setLoadingTier(null);

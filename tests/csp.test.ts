@@ -13,7 +13,10 @@ const productionPolicy = buildContentSecurityPolicy({
   supabaseUrl: "https://iuzmhwjdlywbhtgzuyib.supabase.co",
 })
 
-assert.match(productionPolicy, /img-src 'self' blob: data: lh3\.googleusercontent\.com iuzmhwjdlywbhtgzuyib\.supabase\.co;/)
+assert.match(productionPolicy, /img-src .*lh3\.googleusercontent\.com.*iuzmhwjdlywbhtgzuyib\.supabase\.co/)
+assert.match(productionPolicy, /script-src .*https:\/\/www\.googletagmanager\.com.*https:\/\/www\.clarity\.ms.*https:\/\/connect\.facebook\.net.*https:\/\/snap\.licdn\.com/)
+assert.match(productionPolicy, /connect-src .*https:\/\/iuzmhwjdlywbhtgzuyib\.supabase\.co.*wss:\/\/iuzmhwjdlywbhtgzuyib\.supabase\.co.*https:\/\/www\.google-analytics\.com.*https:\/\/stats\.g\.doubleclick\.net.*https:\/\/www\.clarity\.ms.*https:\/\/px\.ads\.linkedin\.com/)
+assert.match(productionPolicy, /img-src .*https:\/\/www\.facebook\.com.*https:\/\/px\.ads\.linkedin\.com/)
 assert.doesNotMatch(productionPolicy, /unsafe-eval/)
 
 const developmentPolicy = buildContentSecurityPolicy({

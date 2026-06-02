@@ -19,6 +19,7 @@ import { Filters } from "@/components/ui/filters"
 import { QuickFilters } from "@/components/ui/quick-filters"
 import { countries } from "@/lib/countries"
 import { highlightOptions, jobTypes, languageOptions, salaryCurrencies } from "@/lib/job-options"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 import { useJobSearch } from "@/hooks/use-job-search"
 import {
   Pagination,
@@ -155,6 +156,40 @@ export default function JobPortalClient({
     window.localStorage.setItem("jobwest:saved-jobs", JSON.stringify(state.savedJobs))
   }, [savedJobsLoaded, state.savedJobs])
 
+  useEffect(() => {
+    if (!isHydrated || !hasActiveFilters) return
+
+    const timeoutId = window.setTimeout(() => {
+      trackMarketingEvent("search", {
+        search_term: searchTerm || undefined,
+        results_count: filteredJobs.length,
+        category_count: selectedCategories.length,
+        country_count: selectedCountries.length,
+        job_type_count: selectedJobTypes.length,
+        language_count: selectedLanguages.length,
+        highlight_count: selectedHighlightTiers.length,
+        accommodation_provided: accommodationProvided,
+        min_salary: minSalary || undefined,
+        salary_currency: salaryCurrency === "any" ? undefined : salaryCurrency,
+      })
+    }, 700)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [
+    accommodationProvided,
+    filteredJobs.length,
+    hasActiveFilters,
+    isHydrated,
+    minSalary,
+    salaryCurrency,
+    searchTerm,
+    selectedCategories,
+    selectedCountries,
+    selectedHighlightTiers,
+    selectedJobTypes,
+    selectedLanguages,
+  ])
+
   const scrollToJobGrid = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [])
@@ -201,7 +236,7 @@ export default function JobPortalClient({
       className="min-h-screen bg-[#f6f7f2] flex flex-col"
     >
       <div className="mx-auto w-full">
-        <main className="flex-grow">
+        <div className="flex-grow">
           <div className="mx-auto max-w-screen-2xl px-4 py-5 md:px-6 md:py-6">
             <PortalSearchPanel
               searchTerm={searchTerm}
@@ -318,7 +353,7 @@ export default function JobPortalClient({
               </div>
             </div>
           </div>
-        </main>
+        </div>
         <EmployerStickyCta />
       </div>
     </div>

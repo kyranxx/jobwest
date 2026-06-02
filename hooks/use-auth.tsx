@@ -7,7 +7,7 @@ import type { User as SupabaseUser, Session } from "@supabase/supabase-js"
 type AuthContextType = {
   user: SupabaseUser | null
   loading: boolean
-  signOut: () => Promise<void>
+  signOut: () => Promise<{ ok: boolean; error?: string }>
   refetch: () => Promise<void>
 }
 
@@ -104,15 +104,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error("Error signing out:", error)
+        setLoading(false)
+        return { ok: false, error: error.message }
       }
       // Clear cache
       cachedUserRef.current = null
       cachedSessionRef.current = null
       lastCheckRef.current = 0
       updateUser(null)
+      return { ok: true }
     } catch (error) {
       console.error("Sign out failed:", error)
       setLoading(false)
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Odhlásenie sa nepodarilo.",
+      }
     }
   }, [supabase.auth, updateUser])
 

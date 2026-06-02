@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { MarketingEvent } from "@/components/marketing/marketing-event";
 import { Button } from "@/components/ui/button";
+import { paymentTiers } from "@/lib/payments";
 import { siteConfig } from "@/lib/site";
 import { getSupabaseServerClient } from "@/lib/utils/supabase/server";
 
@@ -21,6 +23,7 @@ export default async function PaymentSuccessPage({
     tier: params.tier,
   });
   const title = isVerified ? "Platba je potvrdená" : "Platbu overujeme";
+  const paidTier = params.tier === "top" || params.tier === "exclusive" ? paymentTiers[params.tier] : null;
   const message = isDemo
     ? "Demo režim: presmerovanie platby funguje, ale reálne zvýraznenie sa nezapísalo."
     : isVerified
@@ -35,6 +38,27 @@ export default async function PaymentSuccessPage({
           {message}
         </p>
         <p className="mt-3 text-xs font-medium text-slate-500">Balík: {params.tier ?? "nezadaný"}</p>
+        <MarketingEvent
+          name="purchase"
+          enabled={Boolean(isVerified && paidTier)}
+          params={{
+            currency: "EUR",
+            value: paidTier ? paidTier.amount / 100 : undefined,
+            transaction_id: sessionId,
+            items: paidTier
+              ? [
+                  {
+                    item_id: hasValidJobId ? String(numericJobId) : undefined,
+                    item_name: paidTier.name,
+                    item_category: "job_highlight",
+                    item_variant: params.tier,
+                    price: paidTier.amount / 100,
+                    quantity: 1,
+                  },
+                ]
+              : undefined,
+          }}
+        />
         <Button asChild className="mt-6">
           <Link href="/ucet/moje-platby">Späť na platby</Link>
         </Button>

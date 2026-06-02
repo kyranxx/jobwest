@@ -70,6 +70,16 @@ export default function PrivacyPage() {
         </section>
 
         <section>
+          <h2 className="text-base font-semibold text-slate-950">Cookies, analytika a marketing</h2>
+          <p className="mt-2">
+            Nevyhnutné cookies používame na prihlásenie, bezpečnosť a fungovanie portálu. Nástroje
+            na analytiku alebo marketing, napríklad Google Analytics, Google Tag Manager,
+            Microsoft Clarity, Meta Pixel alebo LinkedIn Insight Tag, sa načítajú iba po súhlase
+            používateľa v nastaveniach cookies.
+          </p>
+        </section>
+
+        <section>
           <h2 className="text-base font-semibold text-slate-950">Uchovávanie údajov</h2>
           <p className="mt-2">
             Údaje uchovávame iba počas používania účtu, trvania inzerátu alebo po dobu potrebnú

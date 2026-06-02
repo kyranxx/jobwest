@@ -1,18 +1,23 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import "./flags.css";
 import { Toaster } from "@/components/ui/sonner"
 import Link from "next/link"
 import Image from "next/image";
 import { HeaderActions } from "@/components/auth/header-actions"
+import { AuthProvider } from "@/hooks/use-auth"
+import { MarketingConsent } from "@/components/marketing/marketing-consent"
 import { countries, getCountryPath } from "@/lib/countries"
+import { getPublicMarketingIntegrations, getSiteVerificationMetadata } from "@/lib/marketing-integrations"
 import { siteConfig } from "@/lib/site"
 
 const copyrightYear = new Date().getFullYear()
 const footerCountryCodes = new Set(["de", "at", "ch", "nl", "ie", "gb", "fr", "it", "dk", "se", "cz"])
 const footerCountries = countries.filter((country) => footerCountryCodes.has(country.code))
 const siteUrl = siteConfig.url
+const marketingIntegrations = getPublicMarketingIntegrations()
+const siteVerification = getSiteVerificationMetadata()
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -36,9 +41,23 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  ...(siteVerification ? { verification: siteVerification } : {}),
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/jobwest-favicon.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
   },
+  manifest: "/site.webmanifest",
+}
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#7A1955",
 }
 
 export default function RootLayout({
@@ -50,7 +69,14 @@ export default function RootLayout({
     <html lang="sk" suppressHydrationWarning>
       <head />
       <body className="min-h-screen bg-background">
-        <div className="relative flex min-h-screen flex-col">
+        <a
+          href="#main-content"
+          className="sr-only fixed left-3 top-3 z-[100] rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-950 shadow-md focus:not-sr-only"
+        >
+          Preskočiť na hlavný obsah
+        </a>
+        <AuthProvider>
+          <div className="relative flex min-h-screen flex-col">
             <header className="sticky top-0 z-50 w-full border-b border-[#e4dfd8] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/86">
               <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between gap-4 px-3 md:px-6">
                 <Link href="/" prefetch={false} className="flex min-w-0 shrink items-center gap-2">
@@ -81,7 +107,7 @@ export default function RootLayout({
               </div>
             </header>
 
-            <main className="flex-1">{children}</main>
+            <div id="main-content" tabIndex={-1} className="flex-1">{children}</div>
 
             <footer className="border-t border-emerald-900/30 bg-[#070b16] text-slate-200">
                 <div className="mx-auto max-w-6xl px-4 py-14 text-center md:px-6 md:py-20">
@@ -152,7 +178,9 @@ export default function RootLayout({
                   </div>
                 </div>
             </footer>
-        </div>
+          </div>
+        </AuthProvider>
+        <MarketingConsent config={marketingIntegrations} />
         <Toaster />
       </body>
     </html>
