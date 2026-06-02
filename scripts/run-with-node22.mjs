@@ -26,10 +26,13 @@ const command = cachedNode22 ?? npxCommand
 const args = cachedNode22
   ? [script, ...scriptArgs]
   : ["-y", "-p", "node@22", "node", script, ...scriptArgs]
+const childEnv = cachedNode22
+  ? withPathPrepended(process.env, path.dirname(cachedNode22))
+  : process.env
 
 const result = spawnSync(command, args, {
   stdio: "inherit",
-  env: { ...process.env, JOBWEST_NODE_REEXEC: "node22" },
+  env: { ...childEnv, JOBWEST_NODE_REEXEC: "node22" },
   shell: !cachedNode22 && process.platform === "win32",
 })
 
@@ -58,4 +61,14 @@ function findCachedNode22() {
   }
 
   return null
+}
+
+function withPathPrepended(env, directory) {
+  const pathKey = Object.keys(env).find((key) => key.toLowerCase() === "path") ?? "PATH"
+  const currentPath = env[pathKey]
+
+  return {
+    ...env,
+    [pathKey]: currentPath ? `${directory}${path.delimiter}${currentPath}` : directory,
+  }
 }

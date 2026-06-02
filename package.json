@@ -7,8 +7,10 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:delayed": "sleep 5 && next dev",
+    "dev": "node scripts/run-with-node22.mjs node_modules/next/dist/bin/next dev --turbo",
+    "dev:webpack": "node scripts/run-with-node22.mjs node_modules/next/dist/bin/next dev",
+    "dev:lowmem": "node scripts/run-with-node22.mjs node_modules/next/dist/bin/next dev --turbo --disable-source-maps",
+    "dev:delayed": "sleep 5 && pnpm dev",
     "build": "node scripts/run-with-node22.mjs scripts/build-production.mjs",
     "start": "next start",
     "lint": "next lint",
