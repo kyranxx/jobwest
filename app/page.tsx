@@ -1,4 +1,5 @@
 import JobPortalClient from "@/components/ui/job-portal-client";
+import { EUROPE_MAP_VIEW_BOX, europeMapFeatures, type EuropeMapFeature } from "@/lib/europe-map";
 import { getVisibleJobs } from "@/lib/job-source";
 import { getPortalStructuredData } from "@/lib/job-seo";
 import { countries, getCountryPath } from "@/lib/countries";
@@ -30,8 +31,10 @@ export default async function JobPortalPage() {
           __html: JSON.stringify(getPortalStructuredData(jobs, { includeJobList: !isDemoMode })).replace(/</g, "\\u003c"),
         }}
       />
-      <PortalHero jobs={jobs} isDemoMode={isDemoMode} />
-      <JobPortalClient jobs={jobs} />
+      <main>
+        <PortalHero jobs={jobs} isDemoMode={isDemoMode} />
+        <JobPortalClient jobs={jobs} />
+      </main>
     </>
   );
 }
@@ -268,28 +271,32 @@ type HeroCountrySummary = {
 }
 
 const mapMarkerPositions: Record<string, { x: number; y: number }> = {
-  gb: { x: 22, y: 32 },
-  ie: { x: 15, y: 47 },
-  nl: { x: 38, y: 39 },
-  de: { x: 51, y: 48 },
-  ch: { x: 43, y: 66 },
-  at: { x: 58, y: 66 },
-  fr: { x: 33, y: 61 },
-  cz: { x: 58, y: 53 },
-  pl: { x: 68, y: 42 },
-  it: { x: 56, y: 78 },
-  dk: { x: 48, y: 22 },
-  se: { x: 61, y: 12 },
-  es: { x: 24, y: 79 },
-  pt: { x: 14, y: 80 },
+  gb: { x: 26.8, y: 47.3 },
+  ie: { x: 20.4, y: 48 },
+  nl: { x: 34.3, y: 54.3 },
+  de: { x: 39.9, y: 57.3 },
+  ch: { x: 37.2, y: 67.7 },
+  at: { x: 44.3, y: 65.5 },
+  fr: { x: 30.1, y: 67.8 },
+  cz: { x: 45.6, y: 59.9 },
+  pl: { x: 49.5, y: 53.9 },
+  it: { x: 42.9, y: 77.5 },
+  dk: { x: 39.4, y: 44.3 },
+  se: { x: 43.7, y: 29.7 },
+  es: { x: 20.7, y: 81.2 },
+  pt: { x: 14.4, y: 81.1 },
 }
 
 const mapLabelOffsets: Record<string, { labelX: number; labelY: number }> = {
-  ie: { labelX: -18, labelY: -18 },
-  nl: { labelX: 16, labelY: -38 },
+  gb: { labelX: 40, labelY: -22 },
+  ie: { labelX: 56, labelY: -16 },
+  nl: { labelX: -10, labelY: -38 },
   de: { labelX: 58, labelY: -20 },
   ch: { labelX: -42, labelY: 28 },
   at: { labelX: 62, labelY: 20 },
+  se: { labelX: -36, labelY: 34 },
+  es: { labelX: 44, labelY: -24 },
+  pt: { labelX: 56, labelY: -18 },
 }
 
 const preferredMapCountries = ["de", "nl", "at", "ch", "ie"]
@@ -340,40 +347,78 @@ function formatCurrency(value: number): string {
 }
 
 function EuropeOpportunityMap({ countries: countrySummaries }: { countries: HeroCountrySummary[] }) {
+  const countrySummaryMap = new Map(countrySummaries.map((country) => [country.code, country]))
+  const linkableCountryMap = new Map(countries.map((country) => [country.code, country.name]))
+
   return (
     <div className="relative min-h-[360px] w-full min-w-0 overflow-hidden rounded-lg border border-[#dde3d8] bg-[#eef3eb] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] lg:min-h-[430px]">
-      <svg
-        className="absolute inset-0 size-full text-[#dbe5d6]"
-        viewBox="0 0 720 520"
-        aria-hidden="true"
-      >
-        <rect width="720" height="520" fill="#eef3eb" />
-        <path d="M86 266c35-55 75-88 121-101 52-15 88 4 126-24 42-30 44-83 89-104 54-25 118 16 142 60 26 47 10 96 45 128 26 24 70 17 93 49 23 33 0 87-34 116-54 46-142 42-201 17-36-16-58-39-91-34-39 6-48 43-88 50-48 9-73-36-129-32-31 2-52 18-77 5-37-20-30-86 4-130Z" fill="currentColor" />
-        <path d="M158 153c25-37 55-63 91-76 47-16 88-5 99 27 13 37-25 72-55 91-41 26-111 46-141 9-11-14-6-33 6-51Z" fill="#e6ede2" />
-        <path d="M430 358c31-18 86-13 113 10 24 21 25 56-1 78-31 26-95 23-126-3-29-24-21-64 14-85Z" fill="#e4ecdf" />
-        <path d="M220 382c18 17 11 48-14 62-26 14-62 6-78-17-17-24-5-56 24-66 22-8 51 3 68 21Z" fill="#e4ecdf" />
-        <path d="M350 95c63-18 112-9 145 26" fill="none" stroke="#d1dccb" strokeWidth="2" />
-        <path d="M198 312c83-48 184-56 312-25" fill="none" stroke="#d1dccb" strokeWidth="2" />
-      </svg>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_52%,rgba(38,121,83,0.22),transparent_25%),radial-gradient(circle_at_45%_62%,rgba(38,121,83,0.12),transparent_32%)]" />
+      <div className="absolute inset-x-3 top-1/2 aspect-[720/520] -translate-y-1/2 sm:inset-x-5 lg:inset-x-7">
+        <svg
+          className="absolute inset-0 size-full"
+          viewBox={EUROPE_MAP_VIEW_BOX}
+          role="img"
+          aria-label="Mapa Európy s klikateľnými krajinami"
+        >
+          <rect width="720" height="520" rx="18" fill="#eef3eb" />
+          <path d="M50 343C128 223 232 150 354 120c131-31 238 2 331 98v249H50Z" fill="#e5eddf" opacity="0.58" />
+          <g stroke="#ffffff" strokeWidth="1.15" strokeLinejoin="round">
+            {europeMapFeatures.map((feature) => (
+              <EuropeMapCountry
+                key={feature.code}
+                feature={feature}
+                name={linkableCountryMap.get(feature.code.toLowerCase())}
+                summary={countrySummaryMap.get(feature.code.toLowerCase())}
+              />
+            ))}
+          </g>
+        </svg>
 
-      <div className="absolute left-4 top-4 hidden overflow-hidden rounded-md border border-[#d7dce0] bg-white shadow-sm sm:block">
-        <button className="flex size-9 items-center justify-center border-b border-[#e4e6e8] text-lg font-semibold text-[#241033]" aria-label="Priblížiť mapu">+</button>
-        <button className="flex size-9 items-center justify-center text-lg font-semibold text-[#241033]" aria-label="Oddialiť mapu">-</button>
+        {countrySummaries.map((country) => (
+          <CountryMapMarker key={country.code} country={country} />
+        ))}
       </div>
-
-      {countrySummaries.map((country) => (
-        <CountryMapMarker key={country.code} country={country} />
-      ))}
 
       <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-md border border-[#d8ded6] bg-white/90 px-3 py-2 text-xs font-medium text-[#4d5660] shadow-sm backdrop-blur">
         <span className="relative flex size-4 items-center justify-center rounded-full bg-emerald-50">
           <span className="size-2 rounded-full bg-emerald-700" />
         </span>
-        Krajina s najviac ponukami
+        Krajiny s ponukami
       </div>
     </div>
   )
+}
+
+function EuropeMapCountry({ feature, name, summary }: { feature: EuropeMapFeature; name?: string; summary?: HeroCountrySummary }) {
+  const code = feature.code.toLowerCase()
+  const isLinkable = Boolean(name)
+  const count = summary?.count ?? 0
+  const path = (
+    <path
+      d={feature.path}
+      className={getEuropeMapCountryClassName(feature, isLinkable, count > 0)}
+    />
+  )
+
+  if (!isLinkable) return path
+
+  const label = `${name}: ${count} ${formatOfferCount(count)}`
+
+  return (
+    <a href={getCountryPath(code)} aria-label={label} className="group outline-none">
+      <title>{label}</title>
+      {path}
+    </a>
+  )
+}
+
+function getEuropeMapCountryClassName(feature: EuropeMapFeature, isLinkable: boolean, hasOffers: boolean): string {
+  if (!isLinkable) {
+    return feature.kind === "eu" ? "fill-[#dbe9d5]" : "fill-[#e7eee3]"
+  }
+
+  const fill = hasOffers ? "fill-[#bad8b2]" : "fill-[#cbdcc6]"
+
+  return `${fill} cursor-pointer transition-colors duration-200 group-hover:fill-[#92c286] group-focus:fill-[#92c286]`
 }
 
 function CountryMapMarker({ country }: { country: HeroCountrySummary }) {
@@ -381,14 +426,15 @@ function CountryMapMarker({ country }: { country: HeroCountrySummary }) {
     <Link
       href={getCountryPath(country.code)}
       prefetch={false}
-      className="group absolute size-5 -translate-x-1/2 -translate-y-1/2"
+      aria-label={`${country.name}: ${country.count} ${formatOfferCount(country.count)}`}
+      className="group absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2"
       style={{ left: `${country.x}%`, top: `${country.y}%` }}
     >
       <span className="absolute inset-0 flex items-center justify-center rounded-full bg-emerald-100/80">
         <span className="size-3 rounded-full border-2 border-white bg-emerald-700 shadow-[0_0_0_1px_rgba(16,92,58,0.25)]" />
       </span>
       <span
-        className="absolute left-1/2 top-1/2 hidden min-w-[126px] rounded-md border border-[#dedbe2] bg-white px-3 py-2 text-sm shadow-[0_12px_30px_rgba(36,16,51,0.12)] transition group-hover:border-[#b989ad] sm:block"
+        className="pointer-events-none absolute left-1/2 top-1/2 hidden min-w-[126px] rounded-md border border-[#dedbe2] bg-white px-3 py-2 text-sm shadow-[0_12px_30px_rgba(36,16,51,0.12)] transition group-hover:block group-hover:border-[#b989ad] group-focus-visible:block sm:block sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
         style={{ transform: `translate(calc(-50% + ${country.labelX}px), calc(-100% + ${country.labelY}px))` }}
       >
         <span className="flex items-center gap-2 font-semibold text-[#241033]">
