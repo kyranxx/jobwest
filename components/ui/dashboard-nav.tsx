@@ -8,6 +8,7 @@ import { Briefcase, CreditCard, FilePlus2, LogOut, Settings, LayoutDashboard, Ba
 import { cn } from "@/lib/utils";
 import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const navItems = [
   { href: "/ucet", label: "Prehľad", icon: LayoutDashboard },
@@ -60,7 +61,16 @@ function DashboardNav() {
   }, [user]);
 
   const handleLogout = useCallback(async () => {
-    await signOut();
+    const toastId = toast.loading("Odhlasujem...");
+    const result = await signOut();
+    toast.dismiss(toastId);
+
+    if (!result.ok) {
+      toast.error(result.error ?? "Odhlásenie sa nepodarilo.");
+      return;
+    }
+
+    toast.success("Ste odhlásený.");
     window.location.href = "/";
   }, [signOut]);
 

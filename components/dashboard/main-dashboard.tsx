@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { siteConfig } from "@/lib/site";
 
 type DashboardStats = {
   activeJobs: number
@@ -50,6 +51,7 @@ function MainDashboard() {
         .from("jobs")
         .select("id", { count: "exact", head: true })
         .eq("user_id", currentUser.id)
+        .eq("portal_code", siteConfig.portalCode)
 
       if (cancelled) return
 

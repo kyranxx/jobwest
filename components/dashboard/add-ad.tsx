@@ -27,6 +27,7 @@ import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client";
 import { countries } from "@/lib/countries";
 import { toast } from "sonner";
 import { jobCategories, jobTypes } from "@/lib/job-options";
+import { trackMarketingEvent } from "@/lib/marketing-events";
 import { siteConfig } from "@/lib/site";
 import { emptyJobAdFormValues, jobAdFormSchema, type JobAdFormValues } from "@/lib/job-ad-form";
 
@@ -51,12 +52,21 @@ export default function AddAd() {
         portal_code: siteConfig.portalCode,
         portal_domain: siteConfig.portalDomain,
         accommodation_provided: values.accommodation_included,
+        accommodation_included: values.accommodation_included,
         accommodation_paid: values.accommodation_paid,
         is_top: false, highlight_tier: "standard", job_type: values.job_type,
       }]);
 
       if (error) { console.error("Error inserting job:", error); toast.error("Chyba pri pridávaní inzerátu."); }
-      else { toast.success("Inzerát úspešne pridaný."); form.reset(); }
+      else {
+        trackMarketingEvent("generate_lead", {
+          method: "job_ad",
+          job_category: values.category,
+          country_code: values.country_code,
+        });
+        toast.success("Inzerát úspešne pridaný.");
+        form.reset();
+      }
     }
   }
 

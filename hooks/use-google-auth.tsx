@@ -7,6 +7,7 @@ export function useGoogleAuth() {
   const supabase = getSupabaseBrowserClient();
 
   const handleGoogleSignIn = async () => {
+    const toastId = toast.loading("Presmerovávame na Google...");
     const configuredRef = process.env.NEXT_PUBLIC_SUPABASE_URL
       ?.match(/^https:\/\/([^.]+)\.supabase\.co/)?.[1];
     const anonKeyRef = (() => {
@@ -21,6 +22,7 @@ export function useGoogleAuth() {
     })();
 
     if (configuredRef && anonKeyRef && configuredRef !== anonKeyRef) {
+      toast.dismiss(toastId);
       toast.error("Supabase URL a anon key sú z rozdielnych projektov.");
       return;
     }
@@ -36,6 +38,7 @@ export function useGoogleAuth() {
       },
     });
     if (error) {
+      toast.dismiss(toastId);
       toast.error(error.message);
     }
   };

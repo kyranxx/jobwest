@@ -9,6 +9,7 @@ import { HighlightActions } from "@/components/payments/highlight-actions";
 import { Pencil, Trash2, Sparkles, Clock } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import type { JobSummary } from "@/lib/types";
+import { toast } from "sonner";
 
 type MyAdsListProps = {
   jobs: JobSummary[];
@@ -67,10 +68,12 @@ function MyAdsList({ jobs, onInvalidateJobs }: MyAdsListProps) {
   const { push } = useRouter();
 
   const handleEditClick = useCallback((jobId: string) => {
+    toast.info("Otváram úpravu inzerátu.");
     push(`/ucet/inzerat/${jobId}/upravit`);
   }, [push]);
 
   const handleDeleteClick = useCallback((job: JobSummary) => {
+    toast.warning("Potvrďte zmazanie inzerátu.");
     dispatch({ type: "open-delete-dialog", job });
   }, []);
 
@@ -78,11 +81,14 @@ function MyAdsList({ jobs, onInvalidateJobs }: MyAdsListProps) {
     const { selectedJob, isDeleting } = state;
     if (!selectedJob || isDeleting) return;
     if (!user) {
-      dispatch({ type: "set-error", error: "Na zmazanie inzerátu sa musíte prihlásiť." });
+      const message = "Na zmazanie inzerátu sa musíte prihlásiť.";
+      toast.error(message);
+      dispatch({ type: "set-error", error: message });
       return;
     }
 
     dispatch({ type: "start-delete" });
+    const toastId = toast.loading("Mažem inzerát...");
     try {
       const supabase = getSupabaseBrowserClient();
       const { data: deletedJob, error: deleteError } = await supabase
@@ -94,14 +100,19 @@ function MyAdsList({ jobs, onInvalidateJobs }: MyAdsListProps) {
         .select("id")
         .maybeSingle();
       if (deleteError || !deletedJob) {
-        dispatch({ type: "set-error", error: deleteError?.message ?? "Inzerát sa nenašiel alebo nemáte oprávnenie." });
+        const message = deleteError?.message ?? "Inzerát sa nenašiel alebo nemáte oprávnenie.";
+        toast.error(message, { id: toastId });
+        dispatch({ type: "set-error", error: message });
       } else {
+        toast.success("Inzerát bol zmazaný.", { id: toastId });
         onInvalidateJobs();
         dispatch({ type: "close-delete-dialog" });
       }
     } catch (err) {
       console.error("Delete failed:", err);
-      dispatch({ type: "set-error", error: "Nepodarilo sa zmazať inzerát." });
+      const message = "Nepodarilo sa zmazať inzerát.";
+      toast.error(message, { id: toastId });
+      dispatch({ type: "set-error", error: message });
     } finally {
       dispatch({ type: "finish-delete" });
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface DeleteAdDialogProps {
   isOpen: boolean;
@@ -26,7 +27,9 @@ export default function DeleteAdDialog({
 
   const handleConfirm = async () => {
     if (emailConfirmation !== userEmail) {
-      setError('Nesprávny email.');
+      const message = 'Nesprávny email.';
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -43,6 +46,7 @@ export default function DeleteAdDialog({
     if (!isDeleting) {
       setEmailConfirmation('');
       setError('');
+      toast.info('Zmazanie bolo zrušené.');
       onClose();
     }
   };
