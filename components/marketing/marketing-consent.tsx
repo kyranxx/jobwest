@@ -92,6 +92,7 @@ export function MarketingConsent({ config }: { config: PublicMarketingIntegratio
                 {hasAnalytics && (
                   <label className="inline-flex items-center gap-2">
                     <input
+                      id="cookie-consent-analytics"
                       type="checkbox"
                       checked={draft.analytics}
                       onChange={(event) => setDraft((current) => ({ ...current, analytics: event.target.checked }))}
@@ -103,6 +104,7 @@ export function MarketingConsent({ config }: { config: PublicMarketingIntegratio
                 {hasMarketing && (
                   <label className="inline-flex items-center gap-2">
                     <input
+                      id="cookie-consent-marketing"
                       type="checkbox"
                       checked={draft.marketing}
                       onChange={(event) => setDraft((current) => ({ ...current, marketing: event.target.checked }))}

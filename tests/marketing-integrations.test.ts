@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import {
   getIndexNowKey,
   getPublicMarketingIntegrations,
@@ -54,3 +55,8 @@ assert.equal(hasAnalyticsIntegrations(emptyIntegrations), false)
 assert.equal(hasMarketingIntegrations(emptyIntegrations), false)
 assert.equal(getSiteVerificationMetadata({}), undefined)
 assert.equal(getIndexNowKey({}), null)
+
+const consentComponent = readFileSync("components/marketing/marketing-consent.tsx", "utf8")
+
+assert.match(consentComponent, /id="cookie-consent-analytics"/)
+assert.match(consentComponent, /id="cookie-consent-marketing"/)
