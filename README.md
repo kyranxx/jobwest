@@ -67,21 +67,32 @@ pnpm jobs:import path/to/real-jobs.json --env=.env.production.local --commit
 
 The importer rejects placeholder text, placeholder contact domains, missing contact info, duplicate ads, mismatched portal domains, and salaries without a supported currency.
 
-Current go-live blockers:
+Current launch evidence:
 
-- Set Vercel Production `SUPABASE_SERVICE_ROLE_KEY`.
-- Set Vercel Production `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
-- Create a Stripe production webhook endpoint for `https://jobwest.sk/api/stripe/webhook` with `checkout.session.completed`.
-- Set Vercel Production marketing/SEO IDs for GSC, Bing, Ahrefs, IndexNow, GTM, GA4, and Clarity.
-- Point Websupport DNS apex record to Vercel: `A jobwest.sk 76.76.21.21`.
-- Fix `NEXT_PUBLIC_SUPABASE_URL` to an active Supabase project if the current host does not resolve.
-- Apply production Supabase migrations:
-  - `db-migrations/00-production-baseline.sql` for a fresh project
-  - `db-migrations/payments-and-highlights.sql`
-  - `db-migrations/admin-portal-metrics.sql`
-  - `db-migrations/job-contact-info.sql`
-  - `db-migrations/avatar-storage.sql`
-  - `db-migrations/auth-user-profile-trigger.sql`
-- Import at least one approved real job ad with contact info for the `sk` portal.
+Previously evidenced complete:
+
+- Supabase is on active project `uaphhpgvvbwwaicjmwdp`.
+- The production profile trigger migration was applied and verified.
+- A prior production deploy gate passed, and `jobwest.sk` was previously aliased and smoke-tested clean.
+- Google Search Console, GA4, and IndexNow were previously connected or submitted.
+
+Currently locally verified:
+
+- Local checks pass: `pnpm test:unit`, `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm e2e`.
+- `pnpm verify:deploy` passes locally, including Vercel Production env names and Supabase REST reachability.
+- The current branch has local commits that have not been pushed or deployed.
+
+Not currently reverified:
+
+- Current live DNS, alias, and public site behavior.
+- Actual server-side sensitive production secret values, because Vercel may hide them from local env pulls.
+- Stripe production webhook endpoint and signing secret.
+- Current GTM and Microsoft Clarity completion state.
+
+Owner-gated launch inventory:
+
+- Approve at least one real Slovak job ad with contact info for the `sk` portal.
+- Authorize any live inventory check or `pnpm verify:production` run before calling the site live.
+- Optional and non-blocking: resume Bing setup when convenient.
 
 Detailed cutover steps: `docs/production-cutover.md`.
