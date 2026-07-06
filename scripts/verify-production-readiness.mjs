@@ -35,6 +35,8 @@ const placeholderValues = new Set([
   "sk_live_your_key_here",
   "whsec_your_webhook_secret",
   "whsec_your_webhook_secret_here",
+  "your_turnstile_site_key",
+  "your_turnstile_secret_key",
 ])
 
 const requiredEnv = [
@@ -45,11 +47,14 @@ const requiredEnv = [
   "NEXT_PUBLIC_PORTAL_CODE",
   "NEXT_PUBLIC_PORTAL_DOMAIN",
   "NEXT_PUBLIC_APP_URL",
+  "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ]
 const serverSecretEnv = new Set([
   "SUPABASE_SERVICE_ROLE_KEY",
+  "TURNSTILE_SECRET_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ])

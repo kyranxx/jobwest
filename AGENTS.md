@@ -29,3 +29,16 @@ Rules:
 - Do not guess URLs or report unverified SEO issues as confirmed.
 - Use the shared audit template and keep every issue `In review` until evidence proves it.
 - Prefer root-cause fixes in templates/components/config over manual one-page patches.
+
+## AI Citation Readiness
+
+For public pages that should be found, mentioned, or cited by AI/search tools, use:
+
+`C:\Users\User\Desktop\Projects\AI_CITATION_READINESS.md`
+
+Project rule:
+
+- Keep important facts in crawlable HTML near relevant headings.
+- Use one strong page per search intent or claim, with clear title/H1, canonical/indexability, internal links, and relevant schema where it fits naturally.
+- Prefer Search Console/query evidence and live rendered HTML checks before SEO copy changes.
+- Use real third-party proof only; never fake mentions, reviews, or links.

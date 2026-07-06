@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getSupabaseBrowserClient } from "@/lib/utils/supabase/client"
 import { toast } from "sonner"
+import { TurnstileWidget } from "@/components/auth/turnstile-widget"
 import { useGoogleAuth } from "@/hooks/use-google-auth"
 
 const GoogleIcon = () => (
@@ -54,6 +55,8 @@ type SignUpValues = z.infer<typeof SignUpSchema>
 export function AuthForm({ redirectTo = "/ucet" }: { redirectTo?: string }) {
   const supabase = getSupabaseBrowserClient()
   const { handleGoogleSignIn } = useGoogleAuth()
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [loginAttempts, setLoginAttempts] = useState(0)
   const [isLoginDisabled, setIsLoginDisabled] = useState(false)
   const signInForm = useForm<SignInValues>({
@@ -68,11 +71,12 @@ export function AuthForm({ redirectTo = "/ucet" }: { redirectTo?: string }) {
   const checkSignUpEmail = useCallback(async (email: string) => {
     const result = SignUpSchemaBase.pick({ email: true }).safeParse({ email })
     if (!result.success) return
+    if (turnstileSiteKey && !captchaToken) return
 
     const response = await fetch("/api/check-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, captchaToken: captchaToken ?? undefined }),
     })
     if (!response.ok) {
       toast.error("Kontrolu e-mailu sa nepodarilo vykonať.")
@@ -85,17 +89,24 @@ export function AuthForm({ redirectTo = "/ucet" }: { redirectTo?: string }) {
     } else {
       signUpForm.clearErrors("email")
     }
-  }, [signUpForm])
+  }, [captchaToken, signUpForm, turnstileSiteKey])
 
   const handleSignUp = async (values: SignUpValues) => {
+    if (turnstileSiteKey && !captchaToken) {
+      toast.error("Potvrďte bezpečnostné overenie.")
+      return
+    }
+
     const { error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
+      options: captchaToken ? { captchaToken } : undefined,
     })
     if (error) {
       toast.error(error.message)
     } else {
       toast.success("Potvrdzovací odkaz sme poslali e-mailom.")
+      setCaptchaToken(null)
       signUpForm.reset()
     }
   }
@@ -208,6 +219,9 @@ export function AuthForm({ redirectTo = "/ucet" }: { redirectTo?: string }) {
                   <Input id="repeatPassword-signup" type="password" {...signUpForm.register("repeatPassword")} className="rounded-md h-10" autoComplete="new-password" placeholder="Zopakujte heslo" />
                   {signUpForm.formState.errors.repeatPassword && <p className="text-red-500 text-xs">{signUpForm.formState.errors.repeatPassword.message}</p>}
                 </div>
+                {turnstileSiteKey && (
+                  <TurnstileWidget siteKey={turnstileSiteKey} onTokenChange={setCaptchaToken} />
+                )}
                 <Button type="submit" className="w-full h-10">
                   Vytvoriť účet
                 </Button>

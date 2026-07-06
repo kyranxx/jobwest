@@ -174,6 +174,7 @@ export default function RootLayout({
                     <div className="flex items-center gap-4">
                       <Link href="/obchodne-podmienky" prefetch={false} className="text-xs text-slate-400 transition-colors hover:text-slate-200">Obchodné podmienky</Link>
                       <Link href="/ochrana-sukromia" prefetch={false} className="text-xs text-slate-400 transition-colors hover:text-slate-200">Ochrana súkromia</Link>
+                      <Link href="/site-map" prefetch={false} className="text-xs text-slate-400 transition-colors hover:text-slate-200">Mapa stránky</Link>
                     </div>
                   </div>
                 </div>

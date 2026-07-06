@@ -5,6 +5,13 @@ CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 CREATE SCHEMA IF NOT EXISTS private;
 
+CREATE TABLE IF NOT EXISTS private.api_rate_limits (
+  key text NOT NULL,
+  bucket_start timestamptz NOT NULL,
+  count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (key, bucket_start)
+);
+
 CREATE TABLE IF NOT EXISTS public.users (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE,
@@ -36,7 +43,16 @@ CREATE TABLE IF NOT EXISTS public.jobs (
   portal_code text NOT NULL DEFAULT 'sk',
   portal_domain text NOT NULL DEFAULT 'jobwest.sk',
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT jobs_company_required CHECK (company IS NOT NULL AND length(btrim(company)) >= 2),
+  CONSTRAINT jobs_contact_info_required CHECK (contact_info IS NOT NULL AND length(btrim(contact_info)) >= 5 AND contact_info ~* '(@|\+[0-9]{3,}|http|www\.)'),
+  CONSTRAINT jobs_title_required CHECK (title IS NOT NULL AND length(btrim(title)) >= 5),
+  CONSTRAINT jobs_description_required CHECK (description IS NOT NULL AND length(btrim(description)) >= 40),
+  CONSTRAINT jobs_category_required CHECK (category IS NOT NULL AND length(btrim(category)) >= 1),
+  CONSTRAINT jobs_country_code_required CHECK (country_code IS NOT NULL AND length(btrim(country_code)) >= 1),
+  CONSTRAINT jobs_location_required CHECK (location IS NOT NULL AND length(btrim(location)) >= 2),
+  CONSTRAINT jobs_salary_required CHECK (salary IS NOT NULL AND length(btrim(salary)) >= 3 AND salary ~* '\b(EUR|CHF|GBP)\b'),
+  CONSTRAINT jobs_job_type_required CHECK (job_type IS NOT NULL AND length(btrim(job_type)) >= 1)
 );
 
 CREATE TABLE IF NOT EXISTS public.payments (
@@ -134,6 +150,44 @@ $$;
 REVOKE ALL ON FUNCTION private.is_jobwest_admin() FROM PUBLIC;
 GRANT USAGE ON SCHEMA private TO authenticated;
 GRANT EXECUTE ON FUNCTION private.is_jobwest_admin() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.check_api_rate_limit(
+  p_key text,
+  p_limit integer,
+  p_window_seconds integer
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = private, pg_temp
+AS $$
+DECLARE
+  current_bucket timestamptz;
+  next_count integer;
+BEGIN
+  IF p_key IS NULL OR p_key = '' OR p_limit < 1 OR p_window_seconds < 1 THEN
+    RETURN false;
+  END IF;
+
+  current_bucket := to_timestamp(
+    floor(extract(epoch FROM now()) / p_window_seconds) * p_window_seconds
+  );
+
+  DELETE FROM private.api_rate_limits
+  WHERE bucket_start < now() - make_interval(secs => p_window_seconds * 4);
+
+  INSERT INTO private.api_rate_limits (key, bucket_start, count)
+  VALUES (p_key, current_bucket, 1)
+  ON CONFLICT (key, bucket_start)
+  DO UPDATE SET count = private.api_rate_limits.count + 1
+  RETURNING count INTO next_count;
+
+  RETURN next_count <= p_limit;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_api_rate_limit(text, integer, integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_api_rate_limit(text, integer, integer) TO service_role;
 
 DO $$
 BEGIN

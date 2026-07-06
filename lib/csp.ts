@@ -43,6 +43,7 @@ export function buildContentSecurityPolicy({
   const scriptSources = [
     "'self'",
     "https://accounts.google.com",
+    "https://challenges.cloudflare.com",
     "https://www.google.com",
     "https://www.gstatic.com",
     "https://www.googletagmanager.com",
@@ -55,6 +56,7 @@ export function buildContentSecurityPolicy({
     "'self'",
     supabaseHttpsSource,
     supabaseWssSource,
+    "https://challenges.cloudflare.com",
     "https://www.google-analytics.com",
     "https://analytics.google.com",
     "https://region1.google-analytics.com",
@@ -83,7 +85,7 @@ export function buildContentSecurityPolicy({
     script-src ${scriptSources.join(" ")};
     style-src ${styleSources.join(" ")};
     connect-src ${connectSources.join(" ")};
-    frame-src 'self' https://accounts.google.com https://www.google.com https://td.doubleclick.net;
+    frame-src 'self' https://accounts.google.com https://challenges.cloudflare.com https://www.google.com https://td.doubleclick.net;
     img-src ${imageSources.join(" ")};
     font-src 'self';
     object-src 'none';

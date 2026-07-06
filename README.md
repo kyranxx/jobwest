@@ -39,6 +39,13 @@ NEXT_PUBLIC_LINKEDIN_PARTNER_ID=
 
 Set these in the production build environment before deploying. Analytics and marketing tags are loaded only after cookie consent.
 
+Signup abuse protection env vars:
+
+```bash
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+```
+
 Before switching DNS or calling the site live, run:
 
 ```bash

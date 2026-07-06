@@ -23,12 +23,14 @@ dev-server.*.log
 .lighthouse-temp/
 .qa-screens/
 .cdp-profile*/
+_local/
 .supabase-db-password.local
 cypress/screenshots/
 cypress/videos/
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel

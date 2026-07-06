@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isConfiguredSecret, isLiveStripeSecretForSite, paymentTiers } from "@/lib/payments";
+import { checkRateLimit, enforceSameOriginRequest } from "@/lib/request-security";
 import { siteConfig } from "@/lib/site";
 import { getSupabaseServerClient } from "@/lib/utils/supabase/server";
 
@@ -10,6 +11,9 @@ const highlightSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const originError = enforceSameOriginRequest(request);
+  if (originError) return originError;
+
   let body: unknown;
 
   try {
@@ -34,6 +38,14 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Na platbu sa musíte prihlásiť." }, { status: 401 });
   }
+
+  const rateLimitError = await checkRateLimit(request, {
+    key: "stripe-checkout",
+    identifier: user.id,
+    limit: 5,
+    windowSeconds: 300,
+  });
+  if (rateLimitError) return rateLimitError;
 
   const numericJobId = Number(jobId);
 
